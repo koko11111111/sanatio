@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Snake logo">
+  <defs>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a08b4a"/>
+      <stop offset="50%" stop-color="#c4a55a"/>
+      <stop offset="100%" stop-color="#8f7b3f"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="42%" r="55%">
+      <stop offset="0%" stop-color="#c4a55a" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#060e08" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="200" height="200" fill="#060e08"/>
+  <circle cx="100" cy="100" r="88" fill="url(#glow)"/>
+  <g fill="none" stroke="url(#gold)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M42 128c18-34 44-52 72-52 20 0 36 8 46 22"/>
+    <path d="M58 142c12-18 30-28 52-28 16 0 28 6 36 16"/>
+    <path d="M118 48c8 10 12 22 12 36 0 28-22 50-50 50-10 0-19-3-26-8"/>
+    <path d="M132 62c14 6 24 20 24 38 0 30-24 54-54 54-12 0-23-4-32-11"/>
+    <circle cx="126" cy="78" r="5" fill="#c4a55a" stroke="none"/>
+    <circle cx="138" cy="86" r="3.2" fill="#8f7b3f" stroke="none"/>
+    <path d="M150 96c10 8 16 20 16 34 0 26-21 47-47 47"/>
+    <path d="M88 34c-6 14-4 30 6 42"/>
+    <path d="M76 40c-10 8-16 20-16 34"/>
+  </g>
+  <path d="M34 150c22 18 48 26 76 26 42 0 76-34 76-76" fill="none" stroke="#7a6330" stroke-width="2" opacity="0.55"/>
+</svg>
