@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Photo Detector | Dashboard</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="theme.js"></script>
+</head>
+<body>
+  <!-- Theme toggle -->
+  <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Switch to light mode">☀️</button>
+
+  <div class="top-profile">
+    <button id="profile-menu-trigger" class="profile-trigger" type="button" aria-expanded="false" aria-controls="profile-menu">
+      <img id="profile-photo" class="profile-photo-small" src="" alt="User profile photo">
+    </button>
+    <div id="profile-menu" class="profile-menu hidden">
+      <div class="profile-menu-info">
+        <p id="profile-name" class="profile-menu-name">User</p>
+        <p id="profile-email">email@example.com</p>
+        <p id="profile-created">Joined date</p>
+      </div>
+      <label for="profile-photo-input" class="btn btn-secondary">Change Photo</label>
+      <input id="profile-photo-input" type="file" accept="image/*" capture="user">
+      <button id="logout-btn" class="btn btn-secondary" type="button">Log Out</button>
+    </div>
+  </div>
+
+  <main class="dashboard-layout">
+    <section class="dashboard-card">
+      <header class="dashboard-header">
+        <div>
+          <h1>AI Photo Detector</h1>
+          <p id="welcome-user">Welcome back.</p>
+        </div>
+        <nav class="page-nav" aria-label="Site navigation">
+          <a class="btn btn-secondary btn-small" href="community.html">Community</a>
+          <a class="btn btn-secondary btn-small" href="index.html">Welcome</a>
+        </nav>
+      </header>
+
+      <!-- Upload + preview -->
+      <form id="detect-form" class="detector-form" novalidate>
+        <label for="media-file">Choose Photo</label>
+        <input id="media-file" name="mediaFile" type="file" accept="image/*" required>
+        <div id="image-preview-wrap" class="image-preview-wrap hidden">
+          <img id="image-preview" class="image-preview" src="" alt="Preview of selected photo">
+          <button type="button" id="clear-image" class="clear-image-btn" aria-label="Remove photo">✕</button>
+        </div>
+        <button type="submit" class="btn btn-primary">Analyze Photo</button>
+        <p id="detect-message" class="form-message" aria-live="polite"></p>
+      </form>
+
+      <!-- Result -->
+      <section class="result-box">
+        <div class="result-box-header">
+          <h2>Detection Result</h2>
+          <button type="button" id="share-result-btn" class="btn btn-secondary btn-small" hidden>Open Community to Share</button>
+        </div>
+        <p id="result-text">No analysis yet. Upload a file to start.</p>
+      </section>
+
+      <!-- History -->
+      <section class="history-box">
+        <div class="history-header">
+          <h2>Analysis History</h2>
+          <button id="clear-history-btn" class="btn-text-danger" type="button">Clear All</button>
+        </div>
+        <div id="history-feed" class="history-feed"></div>
+      </section>
+
+      <section class="dashboard-link-box">
+        <h2>Community</h2>
+        <p>Post text, photos, files, and test results. Like, dislike, and reply on the community page.</p>
+        <a class="btn btn-primary" href="community.html">Go to Community</a>
+      </section>
+    </section>
+  </main>
+
+  <script src="config.js"></script>
+  <script src="auth.js"></script>
+  <script src="photo-model.js"></script>
+  <script src="detector.js"></script>
+</body>
+</html>

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Photo Detector | Sign Up</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="theme.js"></script>
+</head>
+<body>
+  <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Switch to light mode">☀️</button>
+
+  <main class="auth-layout">
+    <section class="card">
+      <a class="back-link" href="index.html">← Back to Welcome</a>
+      <h1>Sign Up</h1>
+      <p>Create your account to start checking AI-generated photos.</p>
+
+      <form class="auth-form" id="signup-form" action="#" method="post" novalidate>
+        <label for="signup-name">Full Name</label>
+        <input id="signup-name" name="name" type="text" placeholder="Your name" required>
+
+        <label for="signup-email">Email</label>
+        <input id="signup-email" name="email" type="email" placeholder="you@example.com" required>
+
+        <label for="signup-password">Password</label>
+        <p class="password-hint">At least 8 characters with uppercase, lowercase, a number, and a symbol (e.g. <code>Test1234!</code>).</p>
+        <div class="password-field">
+          <input id="signup-password" name="password" type="password" placeholder="Create a password" required>
+          <button type="button" class="password-toggle" data-target="signup-password" aria-label="Show password">🙈</button>
+        </div>
+
+        <label for="signup-confirm-password">Confirm Password</label>
+        <div class="password-field">
+          <input id="signup-confirm-password" name="confirmPassword" type="password" placeholder="Re-enter your password" required>
+          <button type="button" class="password-toggle" data-target="signup-confirm-password" aria-label="Show password">🙈</button>
+        </div>
+
+        <p id="password-strength" class="form-message" aria-live="polite"></p>
+        <p id="signup-message" class="form-message" aria-live="polite"></p>
+
+        <button type="submit" class="btn btn-primary full">Create Account</button>
+      </form>
+
+      <div class="auth-divider"><span>or</span></div>
+      <div id="google-signin-btn" class="google-signin-wrap"></div>
+      <p id="google-auth-message" class="form-message" aria-live="polite"></p>
+
+      <p class="footer-text">
+        Already have an account? <a href="login.html">Log in</a>
+      </p>
+    </section>
+  </main>
+  <script src="config.js"></script>
+  <script src="auth.js" defer></script>
+</body>
+</html>
