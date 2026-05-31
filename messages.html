@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SANATIO | Messages</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="theme.js"></script>
+</head>
+<body>
+  <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Switch to light mode">☀️</button>
+
+  <div class="top-profile">
+    <button id="profile-menu-trigger" class="profile-trigger" type="button" aria-expanded="false" aria-controls="profile-menu">
+      <img id="profile-photo" class="profile-photo-small" src="" alt="User profile photo">
+    </button>
+    <div id="profile-menu" class="profile-menu hidden">
+      <div class="profile-menu-info">
+        <p id="profile-name" class="profile-menu-name">User</p>
+        <p id="profile-email">email@example.com</p>
+        <p id="profile-created">Joined date</p>
+      </div>
+      <label for="profile-photo-input" class="btn btn-secondary">Change Photo</label>
+      <input id="profile-photo-input" type="file" accept="image/*" capture="user">
+      <button id="logout-btn" class="btn btn-secondary" type="button">Log Out</button>
+    </div>
+  </div>
+
+  <main class="dashboard-layout">
+    <section class="dashboard-card messenger-card">
+      <header class="dashboard-header">
+        <div>
+          <h1>Messages</h1>
+          <p id="welcome-user">Your private conversations.</p>
+        </div>
+        <nav class="page-nav" aria-label="Site navigation">
+          <a class="btn btn-secondary btn-small" href="community.html">Community</a>
+          <a class="btn btn-secondary btn-small" href="aipage.html">Dashboard</a>
+        </nav>
+      </header>
+
+      <div class="messenger-layout">
+
+        <!-- LEFT: Contacts + search -->
+        <aside class="messenger-sidebar" id="messenger-sidebar">
+          <div class="messenger-search-wrap">
+            <input id="messenger-search" class="community-search-input" type="search" placeholder="🔍 Search people…" autocomplete="off">
+            <div id="messenger-search-results" class="community-search-results hidden"></div>
+          </div>
+
+          <h2 class="messenger-sidebar-title">Conversations</h2>
+          <div id="conversations-list" class="conversations-list">
+            <p class="messenger-empty">No conversations yet. Search for someone to start chatting.</p>
+          </div>
+        </aside>
+
+        <!-- RIGHT: Chat window -->
+        <section class="messenger-chat" id="messenger-chat">
+          <div class="messenger-chat-empty" id="messenger-chat-empty">
+            <p>👈 Select a conversation or search for someone to message.</p>
+          </div>
+
+          <!-- Chat header (hidden until convo selected) -->
+          <div class="messenger-chat-header hidden" id="messenger-chat-header">
+            <button class="messenger-back-btn" id="messenger-back-btn" type="button" aria-label="Back to conversations">←</button>
+            <img id="chat-peer-avatar" class="messenger-peer-avatar" src="" alt="">
+            <div>
+              <p id="chat-peer-name" class="messenger-peer-name"></p>
+              <p id="chat-peer-status" class="messenger-peer-status"></p>
+            </div>
+          </div>
+
+          <!-- Messages feed -->
+          <div class="messenger-messages hidden" id="messenger-messages"></div>
+
+          <!-- Compose bar -->
+          <form class="messenger-compose hidden" id="messenger-compose" novalidate>
+            <label for="msg-image-input" class="messenger-img-btn" title="Send image">
+              📎
+              <input id="msg-image-input" type="file" accept="image/*" hidden>
+            </label>
+            <input id="msg-text" class="messenger-input" type="text" placeholder="Write a message…" maxlength="1000" autocomplete="off">
+            <button type="submit" class="btn btn-primary messenger-send-btn">Send</button>
+          </form>
+        </section>
+
+      </div>
+    </section>
+  </main>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="config.js"></script>
+  <script src="auth.js"></script>
+  <script src="messages.js"></script>
+</body>
+</html>
