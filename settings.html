@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SANATIO | Settings</title>
+  <script src="theme.js"></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Switch to light mode">☀️</button>
+  <script src="config.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="auth.js"></script>
+  <script src="friends.js"></script>
+  <script src="navbar.js"></script>
+
+  <main class="settings-main">
+    <div class="settings-card">
+      <h1 class="settings-title">Settings</h1>
+
+      <!-- Profile photo -->
+      <section class="settings-section">
+        <h2 class="settings-section-title">Profile Photo</h2>
+        <div class="settings-avatar-row">
+          <img id="settings-avatar" class="settings-avatar" src="" alt="Profile photo">
+          <label class="btn btn-secondary" for="settings-avatar-input">Change Photo</label>
+          <input id="settings-avatar-input" type="file" accept="image/*" hidden>
+        </div>
+        <p id="settings-avatar-msg" class="form-message"></p>
+      </section>
+
+      <!-- Cover photo -->
+      <section class="settings-section">
+        <h2 class="settings-section-title">Cover Photo</h2>
+        <div class="settings-cover-preview" id="settings-cover-preview">
+          <img id="settings-cover-img" class="settings-cover-img" src="" alt="Cover photo">
+        </div>
+        <label class="btn btn-secondary" for="settings-cover-input" style="margin-top:.75rem;display:inline-block">Change Cover Photo</label>
+        <input id="settings-cover-input" type="file" accept="image/*" hidden>
+        <p id="settings-cover-msg" class="form-message"></p>
+      </section>
+
+      <!-- Bio -->
+      <section class="settings-section">
+        <h2 class="settings-section-title">Bio</h2>
+        <form id="settings-bio-form" novalidate>
+          <textarea id="settings-bio" class="fb-bio-input" maxlength="200" placeholder="Write something about yourself…"></textarea>
+          <button type="submit" class="btn btn-primary" style="margin-top:.75rem">Save Bio</button>
+          <p id="settings-bio-msg" class="form-message"></p>
+        </form>
+      </section>
+
+      <!-- Display name -->
+      <section class="settings-section">
+        <h2 class="settings-section-title">Display Name</h2>
+        <form id="settings-name-form" novalidate>
+          <input id="settings-name" class="community-search-input" type="text" maxlength="60" placeholder="Your name">
+          <button type="submit" class="btn btn-primary" style="margin-top:.75rem">Save Name</button>
+          <p id="settings-name-msg" class="form-message"></p>
+        </form>
+      </section>
+
+      <div style="margin-top:1.5rem">
+        <a class="btn btn-secondary" id="settings-view-profile" href="#">View My Profile</a>
+      </div>
+    </div>
+  </main>
+
+  <script src="settings.js"></script>
+</body>
+</html>
