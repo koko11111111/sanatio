@@ -245,7 +245,7 @@ function runSignup() {
     setMessage(strengthMessage, strength.label, strength.type);
   });
 
-  form.addEventListener("submit", (event) => {
+  form.addEventListener("submit", async (event) => {
     event.preventDefault();
     const name = nameInput.value.trim();
     const email = emailInput.value.trim().toLowerCase();
@@ -275,31 +275,35 @@ function runSignup() {
       return;
     }
 
-    const newUser = {
-      name,
-      email,
-      password,
-      authProvider: "email",
-      profilePhoto: "",
-      createdAt: new Date().toISOString(),
-    };
-
     try {
+      setMessage(formMessage, "Creating account…", "warning");
+
+      // Hash password securely
+      const hashedPasswordData = await securePasswordStore(password);
+
+      const newUser = {
+        name,
+        email,
+        passwordHash: hashedPasswordData, // Store hashed password, NOT plaintext
+        authProvider: "email",
+        profilePhoto: "",
+        createdAt: new Date().toISOString(),
+      };
+
       users.push(newUser);
       saveUsers(users);
       setCurrentUser(newUser);
       syncUserToFirebase(newUser);
-    } catch {
-      setMessage(formMessage, "Could not save your account. Try a local server (not file://) or another browser.", "error");
-      return;
-    }
 
-    setMessage(formMessage, "Account created! Opening dashboard…", "success");
-    form.reset();
-    setMessage(strengthMessage, "", "");
-    window.setTimeout(() => {
-      window.location.href = "aipage.html";
-    }, 600);
+      setMessage(formMessage, "Account created! Opening dashboard…", "success");
+      form.reset();
+      setMessage(strengthMessage, "", "");
+      window.setTimeout(() => {
+        window.location.href = "aipage.html";
+      }, 600);
+    } catch (error) {
+      setMessage(formMessage, "Could not create account: " + error.message, "error");
+    }
   });
 }
 
@@ -320,7 +324,7 @@ function loginOrRegisterWithGoogle(profile) {
     user = {
       name,
       email,
-      password: "",
+      passwordHash: null, // Google users don't have a password
       authProvider: "google",
       profilePhoto,
       createdAt: new Date().toISOString(),
@@ -391,12 +395,12 @@ function setupGoogleAuth() {
 
   const clientId = typeof GOOGLE_CLIENT_ID === "string" ? GOOGLE_CLIENT_ID.trim() : "";
   if (!clientId) {
-    buttonHost.innerHTML = '<p class="google-setup-hint">Add your Google Client ID in <code>config.js</code> to enable Sign in with Google.</p>';
+    buttonHost.innerHTML = '<p class="google-setup-hint">Add your Google Client ID in <code>.env</code> as <code>REACT_APP_GOOGLE_CLIENT_ID</code> to enable Sign in with Google.</p>';
     return;
   }
 
   if (window.location.protocol === "file:") {
-    buttonHost.innerHTML = '<p class="google-setup-hint">Google Sign-In does not work when opening HTML files directly. Use a local server (for example <code>npx serve .</code>) and open the site at <code>http://localhost</code>.</p>';
+    buttonHost.innerHTML = '<p class="google-setup-hint">Google Sign-In does not work when opening HTML files directly. Use a local server (for example <code>npx serve .</code>) and open the site via http://localhost.</p>';
     if (googleMessage) {
       googleMessage.textContent = "";
       googleMessage.className = "form-message";
@@ -448,7 +452,7 @@ function runLogin() {
     rememberInput.checked = true;
   }
 
-  form.addEventListener("submit", (event) => {
+  form.addEventListener("submit", async (event) => {
     event.preventDefault();
     const email = emailInput.value.trim().toLowerCase();
     const password = passwordInput.value;
@@ -467,31 +471,42 @@ function runLogin() {
       return;
     }
 
-    if (user.password !== password) {
-      formMessage.textContent = "Wrong password.";
-      formMessage.className = "form-message error";
-      return;
-    }
-
-    if (rememberInput.checked) {
-      localStorage.setItem(REMEMBERED_EMAIL_KEY, email);
-    } else {
-      localStorage.removeItem(REMEMBERED_EMAIL_KEY);
-    }
-
     try {
-      setCurrentUser(user);
-    } catch {
-      formMessage.textContent = "Could not save your session. Try a local server (not file://) or another browser.";
-      formMessage.className = "form-message error";
-      return;
-    }
+      formMessage.textContent = "Verifying password…";
+      formMessage.className = "form-message warning";
 
-    formMessage.textContent = "Login successful.";
-    formMessage.className = "form-message success";
-    window.setTimeout(() => {
-      window.location.href = "aipage.html";
-    }, 500);
+      // Verify hashed password
+      const passwordMatch = await verifyStoredPassword(password, user.passwordHash);
+
+      if (!passwordMatch) {
+        formMessage.textContent = "Wrong password.";
+        formMessage.className = "form-message error";
+        return;
+      }
+
+      if (rememberInput.checked) {
+        localStorage.setItem(REMEMBERED_EMAIL_KEY, email);
+      } else {
+        localStorage.removeItem(REMEMBERED_EMAIL_KEY);
+      }
+
+      try {
+        setCurrentUser(user);
+      } catch {
+        formMessage.textContent = "Could not save your session. Try a local server (not file://) or another browser.";
+        formMessage.className = "form-message error";
+        return;
+      }
+
+      formMessage.textContent = "Login successful.";
+      formMessage.className = "form-message success";
+      window.setTimeout(() => {
+        window.location.href = "aipage.html";
+      }, 500);
+    } catch (error) {
+      formMessage.textContent = "Login error: " + error.message;
+      formMessage.className = "form-message error";
+    }
   });
 }
 
