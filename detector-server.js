@@ -1,8 +1,4 @@
-/**
- * SANATIO detector-server.js
- * Uses ResNet18 via Colab/ngrok server.
- * Update SERVER_URL each time you restart Colab.
- */
+
 
 const SERVER_URL = "https://sacrifice-oboe-ruckus.ngrok-free.dev/analyze";
 
