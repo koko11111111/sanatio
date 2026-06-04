@@ -1,14 +1,3 @@
-/**
- * SANATIO community.js v2 — Firebase edition
- * Posts are now stored in Firestore and visible to ALL users in real time.
- * Likes, dislikes, replies, deletes all sync live.
- *
- * Setup: add your Firebase config to config.js (see instructions in that file).
- */
-
-// ── Firebase initialisation ──────────────────────────────────────────────────
-// Loaded from CDN in community.html. Falls back to localStorage demo if not configured.
-
 const FIREBASE_AVAILABLE = typeof FIREBASE_CONFIG === "object" && FIREBASE_CONFIG && FIREBASE_CONFIG.apiKey;
 
 let db = null; // Firestore instance, set below if Firebase is configured
@@ -86,16 +75,25 @@ function renderScanResultHtml(scan) {
     </div>`;
 }
 
-function renderRepliesHtml(replies) {
+function renderRepliesHtml(replies, postId, currentUserEmail) {
   if (!replies || replies.length === 0) return "";
-  return `<div class="replies-list">${replies.map(r => `
-    <div class="reply">
+  return `<div class="replies-list">${replies.map((r, idx) => {
+    const isOwn = r.email === currentUserEmail;
+    const likes = r.likes || [];
+    const liked = likes.includes(currentUserEmail);
+    return `
+    <div class="reply" data-post="${escapeHtml(postId)}" data-idx="${idx}">
       <img class="reply-avatar" src="${safeImageSrc(r.photo) || createFallbackAvatar(r.author)}" alt="${escapeHtml(r.author)}">
-      <div>
+      <div class="reply-body">
         <p class="reply-author">${escapeHtml(r.author)}</p>
         <p class="reply-text">${escapeHtml(r.text)}</p>
+        <div class="reply-actions">
+          <button class="reply-like-btn${liked ? " reply-liked" : ""}" data-post="${escapeHtml(postId)}" data-idx="${idx}" type="button">❤️ ${likes.length || ""}</button>
+          ${isOwn ? `<button class="reply-delete-btn" data-post="${escapeHtml(postId)}" data-idx="${idx}" type="button">🗑 Delete</button>` : ""}
+        </div>
       </div>
-    </div>`).join("")}</div>`;
+    </div>`;
+  }).join("")}</div>`;
 }
 
 function renderPostCard(post, currentUserEmail) {
@@ -124,7 +122,7 @@ function renderPostCard(post, currentUserEmail) {
           <button class="post-action-btn reply-toggle-btn" data-id="${docId}" type="button">💬 Reply</button>
           ${isOwn ? `<button class="post-action-btn delete-btn" data-id="${docId}" type="button">🗑 Delete</button>` : ""}
         </div>
-        ${renderRepliesHtml(post.replies)}
+        ${renderRepliesHtml(post.replies, docId, currentUserEmail)}
         <div class="reply-form hidden" id="reply-form-${docId}">
           <input class="reply-input" type="text" placeholder="Write a reply…" maxlength="140">
           <button class="btn btn-secondary reply-submit-btn" data-id="${docId}" type="button">Send</button>
@@ -279,6 +277,16 @@ function runCommunityPage() {
         if (btn) submitReply(btn.dataset.id);
       });
     });
+
+    // Reply likes
+    communityFeed.querySelectorAll(".reply-like-btn").forEach(btn => {
+      btn.addEventListener("click", () => toggleReplyLike(btn.dataset.post, Number(btn.dataset.idx)));
+    });
+
+    // Reply deletes
+    communityFeed.querySelectorAll(".reply-delete-btn").forEach(btn => {
+      btn.addEventListener("click", () => deleteReply(btn.dataset.post, Number(btn.dataset.idx)));
+    });
   }
 
   // ── Firebase feed ──────────────────────────────────────────────────────────
@@ -408,6 +416,42 @@ function runCommunityPage() {
     } catch (e) {
       console.error("Delete failed:", e);
     }
+  }
+
+  // ── Reply like / delete ───────────────────────────────────────────────────────
+
+  async function toggleReplyLike(postId, replyIdx) {
+    if (!db) return;
+    const ref = db.collection("community_posts").doc(postId);
+    try {
+      await db.runTransaction(async (tx) => {
+        const snap = await tx.get(ref);
+        if (!snap.exists) return;
+        const replies = snap.data().replies || [];
+        if (!replies[replyIdx]) return;
+        const likes = replies[replyIdx].likes || [];
+        const email = currentUser.email;
+        replies[replyIdx].likes = likes.includes(email)
+          ? likes.filter(e => e !== email)
+          : [...likes, email];
+        tx.update(ref, { replies });
+      });
+    } catch (e) { console.error("Reply like failed:", e); }
+  }
+
+  async function deleteReply(postId, replyIdx) {
+    if (!confirm("Delete this reply?")) return;
+    if (!db) return;
+    const ref = db.collection("community_posts").doc(postId);
+    try {
+      await db.runTransaction(async (tx) => {
+        const snap = await tx.get(ref);
+        if (!snap.exists) return;
+        const replies = snap.data().replies || [];
+        replies.splice(replyIdx, 1);
+        tx.update(ref, { replies });
+      });
+    } catch (e) { console.error("Delete reply failed:", e); }
   }
 
   // ── Post composer ──────────────────────────────────────────────────────────
@@ -572,7 +616,7 @@ function runCommunityPage() {
     const hint = document.createElement("p");
     hint.className = "form-message success";
     hint.style.marginBottom = "12px";
-    hint.textContent = "🟢 Live — posts sync in real time for all users.";
+    hint.textContent = "";
     communityFeed.parentElement?.insertBefore(hint, communityFeed);
   } else {
     // Show setup instructions
