@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: sanatio-ai-server
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python server.py
+    envVars:
+      - key: PORT
+        value: 10000
+    disk:
+      name: model-storage
+      mountPath: /data
+      sizeGB: 1
