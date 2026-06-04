@@ -1,0 +1,44 @@
+# ── Node ──────────────────────────────────────────────────────────────────
+node_modules/
+
+# ── Environment & secrets ─────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+config.js
+
+# ── Python ────────────────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+venv/
+env/
+
+# ── Model & data ──────────────────────────────────────────────────────────
+ai_detector_model.pth
+ai_detector_model_new.pth
+data_lake_review/
+real/
+fake/
+_cache/
+ml/
+
+# ── Logs ──────────────────────────────────────────────────────────────────
+*.log
+debug.log
+
+# ── Build ─────────────────────────────────────────────────────────────────
+dist/
+build/
+
+# ── OS ────────────────────────────────────────────────────────────────────
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+~*
