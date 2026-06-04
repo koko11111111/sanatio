@@ -1,6 +1,6 @@
 
 
-const SERVER_URL = "sanatio111111.kokomina946.workers.dev/";
+const SERVER_URL = "https://sacrifice-oboe-ruckus.ngrok-free.dev/";
 
 async function analyzeWithServer(dataUrl) {
   const response = await fetch(SERVER_URL, {
