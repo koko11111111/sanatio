@@ -2,6 +2,21 @@ const USERS_KEY = "aiDetectorUsers";
 const REMEMBERED_EMAIL_KEY = "aiDetectorRememberedEmail";
 const CURRENT_USER_KEY = "aiDetectorCurrentUser";
 
+// ── Secure Password Cryptography Helpers ─────────────────────────────────────
+// Uses browser-native Web Crypto API to securely hash passwords with SHA-256
+async function securePasswordStore(password) {
+  const msgBuffer = new TextEncoder().encode(password);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function verifyStoredPassword(password, storedHash) {
+  if (!storedHash) return false;
+  const enteringHash = await securePasswordStore(password);
+  return enteringHash === storedHash;
+}
+
 function isStorageAvailable() {
   try {
     const testKey = "__sanatio_storage_test__";
@@ -160,7 +175,7 @@ function showLoggedInNotice() {
   notice.id = "logged-in-notice";
   notice.className = "logged-in-notice";
   notice.innerHTML = `
-    <p>You are already signed in as <strong>${escapeAuthHtml(user.name || user.email)}</strong>.</p>
+    <p>You are already signed in as <strong>\${escapeAuthHtml(user.name || user.email)}</strong>.</p>
     <div class="logged-in-notice-actions">
       <a class="btn btn-primary" href="aipage.html">Go to Dashboard</a>
       <button type="button" class="btn btn-secondary" id="auth-logout-btn">Log Out</button>
@@ -231,7 +246,7 @@ function runSignup() {
 
   function setMessage(element, text, type) {
     element.textContent = text;
-    element.className = `form-message ${type}`;
+    element.className = `form-message \${type}`;
   }
 
   passwordInput.addEventListener("input", () => {
@@ -278,7 +293,7 @@ function runSignup() {
     try {
       setMessage(formMessage, "Creating account…", "warning");
 
-      // Hash password securely
+      // Hash password securely via the native crypto utility
       const hashedPasswordData = await securePasswordStore(password);
 
       const newUser = {
@@ -475,7 +490,7 @@ function runLogin() {
       formMessage.textContent = "Verifying password…";
       formMessage.className = "form-message warning";
 
-      // Verify hashed password
+      // Verify securely hashed password
       const passwordMatch = await verifyStoredPassword(password, user.passwordHash);
 
       if (!passwordMatch) {
