@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SANATIO | Admin Panel</title>
+  <script src="theme.js"></script>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    /* ── Admin-only styles ──────────────────────────────────────────────── */
+    .admin-layout {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+    }
+
+    /* Access denied */
+    .admin-denied {
+      min-height: 60vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 1rem;
+    }
+    .admin-denied-icon { font-size: 4rem; }
+    .admin-denied h2 { color: #f87171; font-size: 1.5rem; }
+    .admin-denied p  { color: var(--muted, #9ca3af); font-size: 0.95rem; max-width: 360px; }
+
+    /* Header */
+    .admin-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .admin-header-left h1 {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: #c9a84c;
+      margin: 0 0 0.2rem;
+    }
+    .admin-header-left p { color: var(--muted, #9ca3af); margin: 0; font-size: 0.9rem; }
+
+    .admin-badge {
+      background: rgba(239,68,68,0.15);
+      border: 1px solid rgba(239,68,68,0.4);
+      color: #f87171;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 0.3rem 0.8rem;
+      border-radius: 999px;
+    }
+
+    /* Stats row */
+    .admin-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .admin-stat-card {
+      background: var(--card-bg, #0f1a0f);
+      border: 1px solid rgba(143,123,63,0.2);
+      border-radius: 12px;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+    .admin-stat-label { font-size: 0.75rem; color: var(--muted, #9ca3af); text-transform: uppercase; letter-spacing: 0.08em; }
+    .admin-stat-value { font-size: 2rem; font-weight: 800; color: #c9a84c; line-height: 1; }
+    .admin-stat-sub   { font-size: 0.78rem; color: var(--muted, #9ca3af); }
+
+    /* Tabs */
+    .admin-tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.75rem;
+      border-bottom: 1px solid rgba(143,123,63,0.2);
+    }
+    .admin-tab {
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--muted, #9ca3af);
+      font-size: 0.9rem;
+      font-weight: 600;
+      padding: 0.75rem 1.25rem;
+      cursor: pointer;
+      margin-bottom: -1px;
+      transition: color 0.2s, border-color 0.2s;
+      font-family: inherit;
+    }
+    .admin-tab:hover  { color: #c9a84c; }
+    .admin-tab.active { color: #c9a84c; border-bottom-color: #c9a84c; }
+
+    .admin-panel { display: none; }
+    .admin-panel.active { display: block; }
+
+    /* Section title */
+    .admin-section-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #c9a84c;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    /* Table */
+    .admin-table-wrap {
+      overflow-x: auto;
+      border: 1px solid rgba(143,123,63,0.18);
+      border-radius: 12px;
+    }
+    .admin-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+    .admin-table th {
+      background: rgba(143,123,63,0.1);
+      color: #c9a84c;
+      font-weight: 600;
+      text-align: left;
+      padding: 0.75rem 1rem;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      border-bottom: 1px solid rgba(143,123,63,0.18);
+    }
+    .admin-table td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid rgba(143,123,63,0.08);
+      color: var(--text, #e8dfc4);
+      vertical-align: middle;
+    }
+    .admin-table tr:last-child td { border-bottom: none; }
+    .admin-table tr:hover td { background: rgba(143,123,63,0.04); }
+
+    .admin-user-row { display: flex; align-items: center; gap: 0.6rem; }
+    .admin-user-avatar {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 1px solid rgba(143,123,63,0.3);
+      flex-shrink: 0;
+    }
+    .admin-user-name  { font-weight: 600; font-size: 0.88rem; }
+    .admin-user-email { font-size: 0.75rem; color: var(--muted, #9ca3af); }
+
+    /* Status pills */
+    .pill {
+      display: inline-block;
+      padding: 0.2rem 0.65rem;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+    .pill-green  { background: rgba(74,222,128,0.12); color: #4ade80; border: 1px solid rgba(74,222,128,0.25); }
+    .pill-red    { background: rgba(248,113,113,0.12); color: #f87171; border: 1px solid rgba(248,113,113,0.25); }
+    .pill-gold   { background: rgba(196,165,90,0.12);  color: #c9a84c; border: 1px solid rgba(196,165,90,0.25); }
+    .pill-muted  { background: rgba(255,255,255,0.05); color: var(--muted,#9ca3af); border: 1px solid rgba(255,255,255,0.1); }
+
+    /* Action buttons */
+    .admin-action-btn {
+      padding: 0.3rem 0.7rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: opacity 0.15s;
+      font-family: inherit;
+    }
+    .admin-action-btn:hover { opacity: 0.8; }
+    .btn-del  { background: rgba(239,68,68,0.12); color: #f87171; border-color: rgba(239,68,68,0.3); }
+    .btn-view { background: rgba(196,165,90,0.12); color: #c9a84c; border-color: rgba(196,165,90,0.3); }
+
+    /* Queue grid */
+    .admin-queue-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 1rem;
+    }
+    .admin-queue-card {
+      background: var(--card-bg, #0f1a0f);
+      border: 1px solid rgba(143,123,63,0.15);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    .admin-queue-card:hover { border-color: rgba(143,123,63,0.4); }
+    .admin-queue-img {
+      width: 100%;
+      height: 150px;
+      object-fit: cover;
+      display: block;
+      background: rgba(0,0,0,0.3);
+    }
+    .admin-queue-body { padding: 0.85rem; }
+    .admin-queue-name {
+      font-size: 0.78rem;
+      color: var(--muted, #9ca3af);
+      margin-bottom: 0.35rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .admin-queue-score { font-size: 0.78rem; margin-bottom: 0.75rem; color: var(--muted,#9ca3af); }
+    .admin-queue-actions { display: flex; gap: 0.4rem; }
+    .admin-queue-btn {
+      flex: 1;
+      padding: 0.4rem 0.2rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: opacity 0.15s;
+      font-family: inherit;
+    }
+    .admin-queue-btn:hover { opacity: 0.8; }
+    .btn-real { background: rgba(34,197,94,0.15); color: #4ade80; border: 1px solid rgba(74,222,128,0.3); }
+    .btn-ai   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(248,113,113,0.3); }
+    .btn-skip { background: rgba(255,255,255,0.05); color: var(--muted,#9ca3af); border: 1px solid rgba(255,255,255,0.1); }
+
+    /* Posts feed */
+    .admin-posts-feed { display: flex; flex-direction: column; gap: 0.75rem; }
+    .admin-post-row {
+      background: var(--card-bg, #0f1a0f);
+      border: 1px solid rgba(143,123,63,0.15);
+      border-radius: 10px;
+      padding: 0.9rem 1rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+    .admin-post-content { flex: 1; min-width: 0; }
+    .admin-post-author  { font-weight: 600; font-size: 0.85rem; color: #c9a84c; margin: 0 0 0.25rem; }
+    .admin-post-text    { font-size: 0.85rem; color: var(--text,#e8dfc4); margin: 0 0 0.35rem; white-space: pre-wrap; }
+    .admin-post-meta    { font-size: 0.72rem; color: var(--muted,#9ca3af); }
+
+    /* Server status */
+    .server-status-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.6rem 1rem;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      margin-bottom: 1.25rem;
+    }
+    .server-status-bar.online  { background: rgba(74,222,128,0.08);  color: #4ade80;  border: 1px solid rgba(74,222,128,0.2); }
+    .server-status-bar.offline { background: rgba(248,113,113,0.08); color: #f87171;  border: 1px solid rgba(248,113,113,0.2); }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+
+    /* Retrain */
+    .retrain-box {
+      background: var(--card-bg, #0f1a0f);
+      border: 1px solid rgba(143,123,63,0.2);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .retrain-info h3 { font-size: 1rem; font-weight: 700; color: var(--text,#e8dfc4); margin: 0 0 0.3rem; }
+    .retrain-info p  { font-size: 0.82rem; color: var(--muted,#9ca3af); margin: 0; }
+    .retrain-btn {
+      padding: 0.65rem 1.5rem;
+      background: linear-gradient(135deg, #8f7b3f, #c9a84c);
+      color: #0a120a;
+      font-weight: 700;
+      font-size: 0.9rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      font-family: inherit;
+    }
+    .retrain-btn:hover    { opacity: 0.9; }
+    .retrain-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .admin-empty {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--muted, #9ca3af);
+      font-size: 0.9rem;
+    }
+
+    .admin-loading { color: var(--muted,#9ca3af); font-size: 0.9rem; padding: 1rem 0; }
+  </style>
+</head>
+<body>
+  <script src="config.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="auth.js"></script>
+  <script src="friends.js"></script>
+  <script src="navbar.js"></script>
+
+  <div class="admin-layout" id="admin-root">
+    <!-- Access check happens in JS -->
+    <div class="admin-loading">Checking access…</div>
+  </div>
+
+  <script>
+    // ── Config ──────────────────────────────────────────────────────────────
+    const ADMIN_EMAIL = "kamols2642009@gmail.com";
+    const SERVER_URL  = "http://localhost:5050";
+    const QUEUE_KEY   = "sanatioReviewQueue";
+
+    // ── Firebase ────────────────────────────────────────────────────────────
+    let db = null;
+    try {
+      if (typeof FIREBASE_CONFIG === "object" && FIREBASE_CONFIG?.apiKey) {
+        if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+        db = firebase.firestore();
+      }
+    } catch(e) { console.warn("Firebase:", e); }
+
+    // ── Helpers ─────────────────────────────────────────────────────────────
+    function escHtml(t) {
+      return String(t||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
+    }
+    function safeImg(url, name) {
+      const v = String(url||"").trim();
+      if (v.startsWith("data:image/")||v.startsWith("http://")||v.startsWith("https://")) return v;
+      const i = (name||"U").trim().charAt(0).toUpperCase();
+      const s = `<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60"><rect width="100%" height="100%" fill="#1f2937"/><text x="50%" y="54%" text-anchor="middle" fill="#e5e7eb" font-size="22" font-family="Arial">${i}</text></svg>`;
+      return `data:image/svg+xml;utf8,${encodeURIComponent(s)}`;
+    }
+    function timeAgo(ts) {
+      if (!ts) return "";
+      const d = typeof ts.toDate==="function" ? ts.toDate() : new Date(ts);
+      if (isNaN(d.getTime())) return "";
+      const diff = Date.now() - d.getTime();
+      if (diff < 60000) return "Just now";
+      if (diff < 3600000) return Math.floor(diff/60000)+"m ago";
+      if (diff < 86400000) return Math.floor(diff/3600000)+"h ago";
+      return Math.floor(diff/86400000)+"d ago";
+    }
+    function getQueue() {
+      try { return JSON.parse(localStorage.getItem(QUEUE_KEY)) || []; }
+      catch { return []; }
+    }
+    function removeFromQueue(name) {
+      const q = getQueue().filter(i => i.name !== name);
+      localStorage.setItem(QUEUE_KEY, JSON.stringify(q));
+    }
+
+    // ── Access check ─────────────────────────────────────────────────────────
+    function checkAccess() {
+      const me = typeof getCurrentUser === "function" ? getCurrentUser() : null;
+      const root = document.getElementById("admin-root");
+
+      if (!me) {
+        window.location.href = "login.html";
+        return false;
+      }
+
+      if (me.email !== ADMIN_EMAIL) {
+        root.innerHTML = `
+          <div class="admin-denied">
+            <div class="admin-denied-icon">🚫</div>
+            <h2>Access Denied</h2>
+            <p>This page is restricted to administrators only.</p>
+            <a href="aipage.html" class="btn btn-secondary" style="margin-top:1rem;display:inline-block;width:auto;padding:.6rem 1.5rem">Go back</a>
+          </div>`;
+        return false;
+      }
+
+      return true;
+    }
+
+    // ── Build UI ──────────────────────────────────────────────────────────────
+    async function buildAdmin() {
+      if (!checkAccess()) return;
+      const me = getCurrentUser();
+      const root = document.getElementById("admin-root");
+
+      root.innerHTML = `
+        <div class="admin-header">
+          <div class="admin-header-left">
+            <h1>Admin Panel</h1>
+            <p>Logged in as ${escHtml(me.email)}</p>
+          </div>
+          <span class="admin-badge">🔒 Admin Only</span>
+        </div>
+
+        <!-- Stats -->
+        <div class="admin-stats" id="admin-stats">
+          <div class="admin-stat-card"><div class="admin-stat-label">Total Users</div><div class="admin-stat-value" id="stat-users">—</div></div>
+          <div class="admin-stat-card"><div class="admin-stat-label">Community Posts</div><div class="admin-stat-value" id="stat-posts">—</div></div>
+          <div class="admin-stat-card"><div class="admin-stat-label">Review Queue</div><div class="admin-stat-value" id="stat-queue">—</div></div>
+          <div class="admin-stat-card"><div class="admin-stat-label">Friend Requests</div><div class="admin-stat-value" id="stat-freq">—</div></div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="admin-tabs">
+          <button class="admin-tab active" data-tab="users">👥 Users</button>
+          <button class="admin-tab" data-tab="posts">📝 Posts</button>
+          <button class="admin-tab" data-tab="queue">🖼️ Review Queue</button>
+          <button class="admin-tab" data-tab="model">🧠 AI Model</button>
+        </div>
+
+        <!-- Users panel -->
+        <div class="admin-panel active" id="tab-users">
+          <div class="admin-section-title">All Users</div>
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead><tr>
+                <th>User</th>
+                <th>Joined</th>
+                <th>Actions</th>
+              </tr></thead>
+              <tbody id="users-tbody"><tr><td colspan="3" class="admin-loading">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Posts panel -->
+        <div class="admin-panel" id="tab-posts">
+          <div class="admin-section-title">
+            <span>Community Posts</span>
+          </div>
+          <div id="posts-feed" class="admin-posts-feed">
+            <div class="admin-loading">Loading…</div>
+          </div>
+        </div>
+
+        <!-- Queue panel -->
+        <div class="admin-panel" id="tab-queue">
+          <div class="admin-section-title">
+            <span>Image Review Queue <span id="queue-count-label"></span></span>
+          </div>
+          <div id="queue-grid" class="admin-queue-grid">
+            <div class="admin-loading">Loading…</div>
+          </div>
+        </div>
+
+        <!-- Model panel -->
+        <div class="admin-panel" id="tab-model">
+          <div id="server-status-bar" class="server-status-bar offline">
+            <span class="status-dot"></span> Checking server…
+          </div>
+          <div class="retrain-box">
+            <div class="retrain-info">
+              <h3>Retrain AI Model</h3>
+              <p>Label images in the review queue first, then retrain the model with the new data.</p>
+            </div>
+            <button class="retrain-btn" id="retrain-btn">⟳ Start Retraining</button>
+          </div>
+          <div class="admin-section-title">Model Info</div>
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <tbody>
+                <tr><td style="color:#c9a84c;font-weight:600">Architecture</td><td>ResNet18</td></tr>
+                <tr><td style="color:#c9a84c;font-weight:600">Training Data</td><td>CIFAKE Dataset</td></tr>
+                <tr><td style="color:#c9a84c;font-weight:600">Test Accuracy</td><td>91.75%</td></tr>
+                <tr><td style="color:#c9a84c;font-weight:600">Balanced Accuracy</td><td>89.75%</td></tr>
+                <tr><td style="color:#c9a84c;font-weight:600">Server</td><td id="model-server-url">${SERVER_URL}</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+
+      // Wire tabs
+      document.querySelectorAll(".admin-tab").forEach(btn => {
+        btn.addEventListener("click", () => {
+          document.querySelectorAll(".admin-tab").forEach(b => b.classList.remove("active"));
+          document.querySelectorAll(".admin-panel").forEach(p => p.classList.remove("active"));
+          btn.classList.add("active");
+          document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
+          if (btn.dataset.tab === "queue") loadQueue();
+          if (btn.dataset.tab === "model") checkServer();
+        });
+      });
+
+      // Load data
+      loadStats();
+      loadUsers();
+      loadPosts();
+
+      // Retrain button
+      document.getElementById("retrain-btn").addEventListener("click", async () => {
+        const btn = document.getElementById("retrain-btn");
+        btn.disabled = true; btn.textContent = "⟳ Retraining…";
+        try {
+          await fetch(`${SERVER_URL}/retrain`, { method: "POST" });
+          btn.textContent = "✓ Done!";
+          setTimeout(() => { btn.textContent = "⟳ Start Retraining"; btn.disabled = false; }, 3000);
+        } catch {
+          btn.textContent = "✗ Server offline";
+          setTimeout(() => { btn.textContent = "⟳ Start Retraining"; btn.disabled = false; }, 2000);
+        }
+      });
+    }
+
+    // ── Stats ─────────────────────────────────────────────────────────────────
+    async function loadStats() {
+      if (!db) return;
+      try {
+        const [users, posts, freq] = await Promise.all([
+          db.collection("users").get(),
+          db.collection("community_posts").get(),
+          db.collection("friendRequests").where("status","==","pending").get(),
+        ]);
+        document.getElementById("stat-users").textContent = users.size;
+        document.getElementById("stat-posts").textContent = posts.size;
+        document.getElementById("stat-freq").textContent  = freq.size;
+        document.getElementById("stat-queue").textContent = getQueue().length;
+      } catch(e) { console.error("Stats:", e); }
+    }
+
+    // ── Users ─────────────────────────────────────────────────────────────────
+    async function loadUsers() {
+      const tbody = document.getElementById("users-tbody");
+      if (!db) { tbody.innerHTML = '<tr><td colspan="3">Firebase not connected.</td></tr>'; return; }
+      try {
+        const snap = await db.collection("users").limit(100).get();
+        if (snap.empty) { tbody.innerHTML = '<tr><td colspan="3" class="admin-empty">No users yet.</td></tr>'; return; }
+        tbody.innerHTML = snap.docs.map(d => {
+          const u = d.data();
+          return `
+            <tr>
+              <td>
+                <div class="admin-user-row">
+                  <img class="admin-user-avatar" src="${safeImg(u.profilePhoto, u.name)}" alt="">
+                  <div>
+                    <div class="admin-user-name">${escHtml(u.name||"—")}</div>
+                    <div class="admin-user-email">${escHtml(u.email||"—")}</div>
+                  </div>
+                </div>
+              </td>
+              <td>${u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "—"}</td>
+              <td>
+                <div style="display:flex;gap:.4rem;flex-wrap:wrap">
+                  <a href="profile.html?user=${encodeURIComponent(u.email)}" class="admin-action-btn btn-view">View</a>
+                  <button class="admin-action-btn btn-del" data-email="${escHtml(u.email)}" onclick="deleteUser('${escHtml(u.email)}')">Delete</button>
+                </div>
+              </td>
+            </tr>`;
+        }).join("");
+      } catch(e) { tbody.innerHTML = `<tr><td colspan="3">Error: ${e.message}</td></tr>`; }
+    }
+
+    async function deleteUser(email) {
+      if (!confirm(`Delete user ${email}? This cannot be undone.`)) return;
+      if (!db) return;
+      try {
+        const key = email.replace(/[.#$[\]]/g,"_");
+        await db.collection("users").doc(key).delete();
+        await loadUsers();
+        await loadStats();
+      } catch(e) { alert("Error: " + e.message); }
+    }
+
+    // ── Posts ─────────────────────────────────────────────────────────────────
+    async function loadPosts() {
+      const feed = document.getElementById("posts-feed");
+      if (!db) { feed.innerHTML = '<div class="admin-empty">Firebase not connected.</div>'; return; }
+      try {
+        const snap = await db.collection("community_posts").limit(50).get();
+        const docs = snap.docs.map(d => ({id: d.id, ...d.data()}));
+        docs.sort((a,b) => {
+          const ta = a.createdAt?.toDate?.() || new Date(a.createdAt||0);
+          const tb = b.createdAt?.toDate?.() || new Date(b.createdAt||0);
+          return tb - ta;
+        });
+        if (!docs.length) { feed.innerHTML = '<div class="admin-empty">No posts yet.</div>'; return; }
+        feed.innerHTML = docs.map(p => `
+          <div class="admin-post-row" id="post-${escHtml(p.id)}">
+            <img class="admin-user-avatar" src="${safeImg(p.profilePhoto, p.author)}" alt="" style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:1px solid rgba(143,123,63,.3);flex-shrink:0">
+            <div class="admin-post-content">
+              <p class="admin-post-author">${escHtml(p.author||p.email||"Unknown")} <span style="font-weight:400;color:var(--muted,#9ca3af);font-size:.75rem">${escHtml(p.email||"")}</span></p>
+              <p class="admin-post-text">${escHtml((p.text||"").slice(0,200))}${(p.text||"").length>200?"…":""}</p>
+              <p class="admin-post-meta">
+                ${timeAgo(p.createdAt)} ·
+                <span class="pill pill-muted">${escHtml(p.postType||"general")}</span> ·
+                👍 ${(p.likes||[]).length} 👎 ${(p.dislikes||[]).length} 💬 ${(p.replies||[]).length}
+              </p>
+            </div>
+            <button class="admin-action-btn btn-del" onclick="deletePost('${escHtml(p.id)}')">Delete</button>
+          </div>`).join("");
+      } catch(e) { feed.innerHTML = `<div class="admin-empty">Error: ${e.message}</div>`; }
+    }
+
+    async function deletePost(id) {
+      if (!confirm("Delete this post?")) return;
+      if (!db) return;
+      try {
+        await db.collection("community_posts").doc(id).delete();
+        document.getElementById("post-" + id)?.remove();
+        await loadStats();
+      } catch(e) { alert("Error: " + e.message); }
+    }
+
+    // ── Review queue ──────────────────────────────────────────────────────────
+    function loadQueue() {
+      const grid  = document.getElementById("queue-grid");
+      const label = document.getElementById("queue-count-label");
+      const queue = getQueue();
+      label.textContent = queue.length ? `(${queue.length})` : "";
+      document.getElementById("stat-queue").textContent = queue.length;
+
+      if (!queue.length) { grid.innerHTML = '<div class="admin-empty">✅ Queue is empty.</div>'; return; }
+
+      grid.innerHTML = queue.map(item => `
+        <div class="admin-queue-card" id="qcard-${CSS.escape(item.name)}">
+          <img class="admin-queue-img" src="${item.dataUrl}" alt="${escHtml(item.name)}">
+          <div class="admin-queue-body">
+            <p class="admin-queue-name" title="${escHtml(item.name)}">${escHtml(item.name)}</p>
+            <p class="admin-queue-score">AI: ${item.aiScore}% · Real: ${item.realScore}%</p>
+            <div class="admin-queue-actions">
+              <button class="admin-queue-btn btn-real" data-name="${escHtml(item.name)}" data-label="real">✓ Real</button>
+              <button class="admin-queue-btn btn-ai"   data-name="${escHtml(item.name)}" data-label="ai">✗ AI</button>
+              <button class="admin-queue-btn btn-skip" data-name="${escHtml(item.name)}" data-label="delete">🗑</button>
+            </div>
+          </div>
+        </div>`).join("");
+
+      grid.querySelectorAll(".admin-queue-btn").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const name  = btn.dataset.name;
+          const label = btn.dataset.label;
+          btn.disabled = true;
+          if (label !== "delete") {
+            try {
+              const item = getQueue().find(i => i.name === name);
+              await fetch(`${SERVER_URL}/label`, {
+                method: "POST",
+                headers: {"Content-Type":"application/json"},
+                body: JSON.stringify({image: item.dataUrl, label, name}),
+              });
+            } catch {}
+          }
+          removeFromQueue(name);
+          loadQueue();
+        });
+      });
+    }
+
+    // ── Server check ──────────────────────────────────────────────────────────
+    async function checkServer() {
+      const bar = document.getElementById("server-status-bar");
+      if (!bar) return;
+      try {
+        await fetch(`${SERVER_URL}/health`);
+        bar.className = "server-status-bar online";
+        bar.innerHTML = '<span class="status-dot"></span> AI Server online';
+      } catch {
+        bar.className = "server-status-bar offline";
+        bar.innerHTML = '<span class="status-dot"></span> AI Server offline — run start-server.bat or Colab';
+      }
+    }
+
+    // ── Boot ──────────────────────────────────────────────────────────────────
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", buildAdmin);
+    } else {
+      buildAdmin();
+    }
+  </script>
+</body>
+</html>
