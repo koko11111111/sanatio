@@ -1,10 +1,6 @@
-/**
- * SANATIO detector-server.js
- * Points to the live Render server instead of localhost.
- * Replace YOUR_RENDER_URL with your actual Render URL after deploying.
- */
 
-const SERVER_URL = "https://YOUR_RENDER_URL.onrender.com/analyze";
+
+const SERVER_URL = "sanatio111111.kokomina946.workers.dev/";
 
 async function analyzeWithServer(dataUrl) {
   const response = await fetch(SERVER_URL, {
