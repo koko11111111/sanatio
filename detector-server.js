@@ -1,15 +1,14 @@
 
 
-const SERVER_URL = "https://sacrifice-oboe-ruckus.ngrok-free.dev/analyze";
+const SERVER_URL = "https://kfokesfojefoef-sanatio-ai-server.hf.space/api/analyze";
 
 async function analyzeWithServer(dataUrl) {
   const response = await fetch(SERVER_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "ngrok-skip-browser-warning": "69420",
     },
-    body: JSON.stringify({ image: dataUrl }),
+    body: JSON.stringify({ data: [dataUrl] }),
   });
 
   if (!response.ok) {
@@ -17,7 +16,9 @@ async function analyzeWithServer(dataUrl) {
     throw new Error(err.error || "Server error");
   }
 
-  return await response.json();
+  const result = await response.json();
+  // Gradio returns { data: [actual_result] }
+  return result.data && result.data[0] ? result.data[0] : result;
 }
 
 const PhotoAiModel = {
@@ -27,6 +28,6 @@ const PhotoAiModel = {
   isReady() { return true; },
   async loadModel() { return true; },
   getMeta() {
-    return { dataset: "ResNet18 via Colab server" };
+    return { dataset: "AI Detector via Hugging Face Space" };
   },
 };
