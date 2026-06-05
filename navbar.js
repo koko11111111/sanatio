@@ -1,167 +1,222 @@
-/**
- * navbar.js — Injects the shared top navigation bar on every authenticated page.
- * Requires auth.js to be loaded first (uses getCurrentUser, logoutCurrentUser,
- * saveProfilePhotoForCurrentUser).
- */
+
+
 (function () {
-  const NAV_ID = "sanatio-navbar";
+  const ADMIN_EMAIL = "kamols2642009@gmail.com";
 
+  function safeImg(url, name) {
+    const v = String(url||"").trim();
+    if (v.startsWith("data:image/")||v.startsWith("http://")||v.startsWith("https://")) return v;
+    const i = (name||"U").trim().charAt(0).toUpperCase();
+    const s = `<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><rect width="100%" height="100%" fill="#1f2937"/><text x="50%" y="54%" text-anchor="middle" fill="#e5e7eb" font-size="32" font-family="Arial,sans-serif">${i}</text></svg>`;
+    return `data:image/svg+xml;utf8,${encodeURIComponent(s)}`;
+  }
   function escHtml(t) {
-    return String(t || "")
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;");
+    return String(t||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
   }
 
-  function safeImgSrc(url) {
-    const v = String(url || "").trim();
-    if (v.startsWith("data:image/") || v.startsWith("http://") || v.startsWith("https://")) return v;
-    return "";
+  function ensureFirebase() {
+    try {
+      if (typeof firebase==="undefined") return false;
+      if (firebase.apps && firebase.apps.length) return true;
+      if (typeof FIREBASE_CONFIG==="object" && FIREBASE_CONFIG?.apiKey) {
+        firebase.initializeApp(FIREBASE_CONFIG);
+        return true;
+      }
+    } catch {}
+    return false;
   }
 
-  function fallbackAvatar(name) {
-    const initial = (name || "U").trim().charAt(0).toUpperCase();
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="100%" height="100%" fill="#1f2937"/><text x="50%" y="54%" text-anchor="middle" fill="#e5e7eb" font-size="16" font-family="Arial,sans-serif">${initial}</text></svg>`;
-    return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+  // Sync current user to Firestore so others can find them
+  function syncCurrentUser(me) {
+    try {
+      if (!ensureFirebase()) return;
+      if (typeof firebase==="undefined" || !firebase.apps?.length) return;
+      const db = firebase.firestore();
+      const key = me.email.replace(/[.#$[\]]/g,"_");
+      db.collection("users").doc(key).set({
+        name:         me.name        || "",
+        email:        me.email       || "",
+        profilePhoto: me.profilePhoto|| "",
+        createdAt:    me.createdAt   || new Date().toISOString(),
+        updatedAt:    new Date().toISOString(),
+      }, { merge: true }).catch(()=>{});
+    } catch {}
   }
 
-  function currentPage() {
-    const p = window.location.pathname.toLowerCase();
-    const parts = p.split("/");
-    return parts[parts.length - 1] || "index.html";
-  }
+  function buildNav(me) {
+    document.getElementById("sanatio-navbar")?.remove();
 
-  function navLink(href, label, page) {
-    const active = currentPage() === href ? ' class="nav-link active" aria-current="page"' : ' class="nav-link"';
-    return `<a href="${href}"${active}>${escHtml(label)}</a>`;
-  }
+    const isAdmin = me.email === ADMIN_EMAIL;
 
-  function buildNav(user) {
-    const photoSrc = safeImgSrc(user.profilePhoto) || fallbackAvatar(user.name);
+    const nav = document.createElement("nav");
+    nav.id = "sanatio-navbar";
+    nav.className = "snav";
+    nav.innerHTML = `
+      <div class="snav-inner">
+        <a class="snav-brand" href="aipage.html">SANATIO</a>
 
-    return `
-      <nav id="${NAV_ID}" class="sanatio-navbar" role="navigation" aria-label="Main navigation">
-        <div class="navbar-inner">
-          <a class="navbar-brand" href="aipage.html" aria-label="SANATIO home">
-            <img src="assets/snake-logo.png" alt="" width="28" height="28"
-              onerror="this.onerror=null;this.src='assets/snake-logo.svg'">
-            <span>SANATIO</span>
+        <div class="snav-center">
+          <a class="snav-pill-tab" href="aipage.html" title="Dashboard">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            <span>Dashboard</span>
           </a>
+          <a class="snav-pill-tab" href="friends.html" title="Friends">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <span>Friends</span>
+          </a>
+          <a class="snav-pill-tab" href="community.html" title="Community">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <span>Community</span>
+          </a>
+          <a class="snav-pill-tab" href="messages.html" title="Messages">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M22 2L11 13"/><path d="M22 2L15 22 11 13 2 9l20-7z"/></svg>
+            <span>Messages</span>
+            <span class="snav-badge hidden" id="snav-msg-badge"></span>
+          </a>
+        </div>
 
-          <div class="navbar-links">
-            ${navLink("aipage.html", "Dashboard", "aipage.html")}
-            ${navLink("community.html", "Community", "community.html")}
-            ${navLink("friends.html", "Friends", "friends.html")}
-            ${navLink("messages.html", "Messages", "messages.html")}
-          </div>
-
-          <div class="navbar-profile">
-            <button type="button" class="navbar-profile-btn" id="navbar-profile-btn"
-              aria-haspopup="true" aria-expanded="false" aria-controls="navbar-profile-menu">
-              <img id="navbar-avatar" src="${escHtml(photoSrc)}" alt="${escHtml(user.name)} avatar"
-                class="navbar-avatar">
-              <span class="navbar-username">${escHtml(user.name || user.email)}</span>
-              <span aria-hidden="true">▾</span>
-            </button>
-
-            <div id="navbar-profile-menu" class="navbar-profile-menu hidden" role="menu">
-              <div class="navbar-profile-info">
-                <p class="navbar-profile-name">${escHtml(user.name || "")}</p>
-                <p class="navbar-profile-email">${escHtml(user.email || "")}</p>
-                <p class="navbar-profile-joined">${user.createdAt ? "Joined " + new Date(user.createdAt).toLocaleDateString() : ""}</p>
-              </div>
-              <label class="navbar-menu-item" for="navbar-photo-input" role="menuitem" tabindex="0">
-                📷 Change Photo
-                <input id="navbar-photo-input" type="file" accept="image/*" hidden>
-              </label>
-              <button type="button" class="navbar-menu-item" id="navbar-logout-btn" role="menuitem">
-                🚪 Log Out
-              </button>
-            </div>
-          </div>
-
-          <button type="button" id="theme-toggle" class="theme-toggle navbar-theme-btn" aria-label="Toggle theme">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-              <circle cx="12" cy="12" r="5"/>
-              <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+        <div class="snav-right">
+          <button class="snav-icon-btn snav-theme-btn" id="snav-theme-btn" title="Toggle dark/light mode" type="button" aria-label="Toggle theme">
+            <svg id="snav-theme-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+              <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
               <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
               <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
               <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
             </svg>
           </button>
+          <a class="snav-icon-btn" href="notifications.html" title="Notifications">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <span class="snav-badge hidden" id="snav-notif-badge"></span>
+          </a>
+
+          <div class="snav-avatar-wrap" id="snav-avatar-wrap">
+            <img class="snav-avatar" id="snav-avatar" src="${safeImg(me.profilePhoto, me.name)}" alt="${escHtml(me.name)}">
+            <div class="snav-dropdown hidden" id="snav-dropdown">
+
+              <!-- Profile info header -->
+              <div class="snav-drop-profile-head">
+                <img class="snav-drop-avatar" src="${safeImg(me.profilePhoto, me.name)}" alt="" id="snav-drop-avatar-img">
+                <div>
+                  <p class="snav-drop-name" id="snav-drop-name">${escHtml(me.name)}</p>
+                  <p class="snav-drop-sub">${escHtml(me.email)}</p>
+                </div>
+              </div>
+              <div class="snav-drop-divider"></div>
+
+              <!-- All actions merged -->
+              <a class="snav-drop-item" href="profile.html?user=${encodeURIComponent(me.email)}">👤 View Profile</a>
+              <a class="snav-drop-item" href="settings.html">⚙️ Settings &amp; Edit Profile</a>
+              <label class="snav-drop-item snav-drop-label" for="snav-photo-input">📷 Change Photo<input id="snav-photo-input" type="file" accept="image/*" hidden></label>
+              <a class="snav-drop-item" href="friends.html">👥 Find Friends</a>
+              ${isAdmin ? `<div class="snav-drop-divider"></div><a class="snav-drop-item" href="admin.html" style="color:#f87171">🔒 Admin Panel</a>` : ""}
+              <div class="snav-drop-divider"></div>
+              <button class="snav-drop-item snav-drop-btn" id="snav-logout">🚪 Log Out</button>
+            </div>
+          </div>
         </div>
-      </nav>`;
-  }
+      </div>`;
 
-  function wireNav(user) {
-    const btn = document.getElementById("navbar-profile-btn");
-    const menu = document.getElementById("navbar-profile-menu");
-    const logoutBtn = document.getElementById("navbar-logout-btn");
-    const photoInput = document.getElementById("navbar-photo-input");
-    const avatarImg = document.getElementById("navbar-avatar");
+    document.body.prepend(nav);
 
-    if (!btn || !menu) return;
-
-    btn.addEventListener("click", () => {
-      const isOpen = !menu.classList.contains("hidden");
-      menu.classList.toggle("hidden", isOpen);
-      btn.setAttribute("aria-expanded", String(!isOpen));
+    // Highlight active pill
+    const path = window.location.pathname.toLowerCase();
+    nav.querySelectorAll(".snav-pill-tab").forEach(a => {
+      const href = (a.getAttribute("href")||"").toLowerCase();
+      if (path.endsWith(href)) a.classList.add("active");
     });
 
-    document.addEventListener("click", (e) => {
-      if (!menu.contains(e.target) && !btn.contains(e.target)) {
-        menu.classList.add("hidden");
-        btn.setAttribute("aria-expanded", "false");
-      }
-    });
+    // Avatar dropdown toggle
+    const avatarWrap = document.getElementById("snav-avatar-wrap");
+    const dropdown   = document.getElementById("snav-dropdown");
+    avatarWrap?.addEventListener("click", e => { e.stopPropagation(); dropdown.classList.toggle("hidden"); });
+    document.addEventListener("click", () => dropdown?.classList.add("hidden"));
 
-    logoutBtn?.addEventListener("click", () => {
-      if (typeof logoutCurrentUser === "function") logoutCurrentUser();
-      window.location.href = "index.html";
-    });
-
-    photoInput?.addEventListener("change", () => {
-      const file = photoInput.files[0];
+    // Change photo from navbar
+    document.getElementById("snav-photo-input")?.addEventListener("change", function() {
+      const file = this.files[0];
       if (!file) return;
       const reader = new FileReader();
       reader.onload = () => {
-        const dataUrl = String(reader.result || "");
-        if (avatarImg) avatarImg.src = dataUrl;
-        if (typeof saveProfilePhotoForCurrentUser === "function") {
-          saveProfilePhotoForCurrentUser(dataUrl);
-        }
+        const url = String(reader.result||"");
+        document.getElementById("snav-avatar").src = url;
+        document.getElementById("snav-drop-avatar-img").src = url;
+        const shimPhoto = document.getElementById("profile-photo");
+        if (shimPhoto) shimPhoto.src = url;
+        if (typeof saveProfilePhotoForCurrentUser==="function") saveProfilePhotoForCurrentUser(url);
+        syncCurrentUser({...me, profilePhoto: url});
       };
       reader.readAsDataURL(file);
     });
 
-    // Re-wire theme toggle (theme.js may have run before navbar was injected)
-    const themeBtn = document.getElementById("theme-toggle");
-    if (themeBtn) {
-      const STORAGE_KEY = "sanatioTheme";
-      themeBtn.addEventListener("click", () => {
-        const next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
-        document.documentElement.setAttribute("data-theme", next);
-        try { localStorage.setItem(STORAGE_KEY, next); } catch {}
-      });
+    // Theme toggle in navbar
+    function updateThemeIcon(theme) {
+      const icon = document.getElementById("snav-theme-icon");
+      if (!icon) return;
+      if (theme === "light") {
+        icon.innerHTML = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
+      } else {
+        icon.innerHTML = '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
+      }
     }
+    document.getElementById("snav-theme-btn")?.addEventListener("click", () => {
+      const KEY = "sanatioTheme";
+      const next = (localStorage.getItem(KEY) || "dark") === "dark" ? "light" : "dark";
+      localStorage.setItem(KEY, next);
+      document.documentElement.setAttribute("data-theme", next);
+      updateThemeIcon(next);
+      document.querySelectorAll(".theme-toggle").forEach(b => {
+        b.textContent = next === "light" ? "🌙" : "☀️";
+      });
+    });
+    updateThemeIcon(localStorage.getItem("sanatioTheme") || "dark");
+
+    // Logout
+    document.getElementById("snav-logout")?.addEventListener("click", () => {
+      if (typeof logoutCurrentUser==="function") logoutCurrentUser();
+      window.location.href = "index.html";
+    });
+
+    loadBadges(me);
+  }
+
+  async function loadBadges(me) {
+    try {
+      if (!ensureFirebase()) return;
+      if (typeof firebase==="undefined" || !firebase.apps?.length) return;
+      const db = firebase.firestore();
+
+      // Notification badge
+      const notifSnap = await db.collection("notifications")
+        .where("to","==",me.email).where("read","==",false).get();
+      const nb = document.getElementById("snav-notif-badge");
+      if (nb && notifSnap.size>0) {
+        nb.textContent = notifSnap.size>9?"9+":String(notifSnap.size);
+        nb.classList.remove("hidden");
+      }
+
+      // Message badge
+      const meKey = me.email.replace(/[.#$[\]]/g,"_");
+      const convSnap = await db.collection("conversations")
+        .where("participants","array-contains",me.email).get();
+      let msgUnread = 0;
+      convSnap.docs.forEach(d => { if ((d.data()[`unread_${meKey}`]||0)>0) msgUnread++; });
+      const mb = document.getElementById("snav-msg-badge");
+      if (mb && msgUnread>0) {
+        mb.textContent = msgUnread>9?"9+":String(msgUnread);
+        mb.classList.remove("hidden");
+      }
+    } catch {}
   }
 
   function init() {
-    if (document.getElementById(NAV_ID)) return; // already injected
-
-    const user = typeof getCurrentUser === "function" ? getCurrentUser() : null;
-    if (!user) return; // not logged in — no navbar needed
-
-    const navHtml = buildNav(user);
-    const placeholder = document.createElement("div");
-    placeholder.innerHTML = navHtml;
-    const navEl = placeholder.firstElementChild;
-    document.body.insertBefore(navEl, document.body.firstChild);
-
-    wireNav(user);
+    if (typeof getCurrentUser!=="function") return;
+    const me = getCurrentUser();
+    if (!me) return;
+    buildNav(me);
+    syncCurrentUser(me);
   }
 
-  if (document.readyState === "loading") {
+  if (document.readyState==="loading") {
     document.addEventListener("DOMContentLoaded", init);
   } else {
     init();

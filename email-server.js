@@ -7,25 +7,8 @@ require("dotenv").config();
 const PORT = Number(process.env.EMAIL_PORT || 3001);
 const app = express();
 
-// Only allow requests from localhost origins — this server should never be
-// reachable from the public internet. Do not use cors() with no options.
-const ALLOWED_ORIGINS = [
-  `http://localhost`,
-  `http://127.0.0.1`,
-  `http://localhost:${PORT}`,
-  // Add your specific dev port if needed, e.g. http://localhost:5500
-];
-
-app.use(cors({
-  origin: (origin, callback) => {
-    // Allow requests with no origin (same-origin, curl, Postman in dev)
-    if (!origin) return callback(null, true);
-    const allowed = ALLOWED_ORIGINS.some(o => origin.startsWith(o));
-    if (allowed) return callback(null, true);
-    callback(new Error(`CORS: origin '${origin}' not allowed`));
-  },
-}));
-app.use(express.json({ limit: "10kb" }));
+app.use(cors());
+app.use(express.json());
 
 let transporterPromise = null;
 

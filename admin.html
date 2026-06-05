@@ -364,10 +364,6 @@
     }
 
     // ── Access check ─────────────────────────────────────────────────────────
-    // NOTE: This is a client-side check. True admin security requires
-    // server-side auth (e.g. Firebase Custom Claims or a backend API).
-    // For this static app, we use a hardcoded admin email + a session token
-    // that is only set when the user logs in with the correct credentials.
     function checkAccess() {
       const me = typeof getCurrentUser === "function" ? getCurrentUser() : null;
       const root = document.getElementById("admin-root");
@@ -377,10 +373,7 @@
         return false;
       }
 
-      // Double-check: read raw storage so a tampered getCurrentUser() shim can't bypass.
-      let rawUser = null;
-      try { rawUser = JSON.parse(localStorage.getItem("aiDetectorCurrentUser")); } catch {}
-      if (!rawUser || rawUser.email !== ADMIN_EMAIL || me.email !== ADMIN_EMAIL) {
+      if (me.email !== ADMIN_EMAIL) {
         root.innerHTML = `
           <div class="admin-denied">
             <div class="admin-denied-icon">🚫</div>
@@ -559,16 +552,11 @@
               <td>
                 <div style="display:flex;gap:.4rem;flex-wrap:wrap">
                   <a href="profile.html?user=${encodeURIComponent(u.email)}" class="admin-action-btn btn-view">View</a>
-                  <button class="admin-action-btn btn-del admin-delete-user-btn" data-email="${escHtml(u.email)}">Delete</button>
+                  <button class="admin-action-btn btn-del" data-email="${escHtml(u.email)}" onclick="deleteUser('${escHtml(u.email)}')">Delete</button>
                 </div>
               </td>
             </tr>`;
         }).join("");
-        // Use event delegation — no inline onclick handlers
-        tbody.addEventListener("click", (e) => {
-          const btn = e.target.closest(".admin-delete-user-btn");
-          if (btn) deleteUser(btn.dataset.email);
-        });
       } catch(e) { tbody.innerHTML = `<tr><td colspan="3">Error: ${e.message}</td></tr>`; }
     }
 
@@ -608,13 +596,8 @@
                 👍 ${(p.likes||[]).length} 👎 ${(p.dislikes||[]).length} 💬 ${(p.replies||[]).length}
               </p>
             </div>
-            <button class="admin-action-btn btn-del admin-delete-post-btn" data-id="${escHtml(p.id)}">Delete</button>
+            <button class="admin-action-btn btn-del" onclick="deletePost('${escHtml(p.id)}')">Delete</button>
           </div>`).join("");
-        // Event delegation — no inline onclick handlers
-        feed.addEventListener("click", (e) => {
-          const btn = e.target.closest(".admin-delete-post-btn");
-          if (btn) deletePost(btn.dataset.id);
-        });
       } catch(e) { feed.innerHTML = `<div class="admin-empty">Error: ${e.message}</div>`; }
     }
 

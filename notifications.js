@@ -1,4 +1,4 @@
-/**
+﻿/**
  * SANATIO notifications.js
  * Fixed: don't mark as read immediately on load, show all notifications properly
  */
@@ -41,9 +41,9 @@ async function runNotificationsPage() {
   const feed       = document.getElementById("notif-feed");
   const markAllBtn = document.getElementById("notif-mark-all");
 
-  feed.innerHTML = '<p class="fb-empty">Loading notifications…</p>';
+  feed.innerHTML = '<p class="fb-empty">Loading notificationsΓÇª</p>';
 
-  // Load notifications first — DON'T mark as read yet
+  // Load notifications first ΓÇö DON'T mark as read yet
   let notifs = [];
   try {
     notifs = await FriendSystem.getNotifications(me.email);
@@ -77,16 +77,16 @@ async function runNotificationsPage() {
   // Render
   feed.innerHTML = notifs.map(n => {
     const sender = senderCache[n.from] || { name: n.from||"Someone", photo: "" };
-    let icon = "🔔", text = "";
+    let icon = "≡ƒöö", text = "";
 
     if (n.type === "friend_request") {
-      icon = "👤";
+      icon = "≡ƒæñ";
       text = `<strong>${escHtml(sender.name)}</strong> sent you a friend request.`;
     } else if (n.type === "friend_accepted") {
-      icon = "✅";
+      icon = "Γ£à";
       text = `<strong>${escHtml(sender.name)}</strong> accepted your friend request. You are now friends!`;
     } else if (n.type === "message") {
-      icon = "💬";
+      icon = "≡ƒÆ¼";
       text = `<strong>${escHtml(sender.name)}</strong> sent you a message.`;
     } else {
       text = `<strong>${escHtml(sender.name)}</strong> interacted with you.`;
@@ -94,8 +94,8 @@ async function runNotificationsPage() {
 
     const actionHtml = n.type === "friend_request" ? `
       <div class="notif-actions" id="notif-actions-${escHtml(n.id)}">
-        <button class="btn btn-primary btn-small notif-accept" data-from="${escHtml(n.from)}" data-notif="${escHtml(n.id)}">✓ Accept</button>
-        <button class="btn btn-secondary btn-small notif-decline" data-from="${escHtml(n.from)}" data-notif="${escHtml(n.id)}">✕ Decline</button>
+        <button class="btn btn-primary btn-small notif-accept" data-from="${escHtml(n.from)}" data-notif="${escHtml(n.id)}">Γ£ô Accept</button>
+        <button class="btn btn-secondary btn-small notif-decline" data-from="${escHtml(n.from)}" data-notif="${escHtml(n.id)}">Γ£ò Decline</button>
       </div>` : "";
 
     const linkHref = n.type === "message"
@@ -135,14 +135,14 @@ async function runNotificationsPage() {
       const from = btn.dataset.from;
       const notifId = btn.dataset.notif;
       btn.disabled = true;
-      btn.textContent = "Accepting…";
+      btn.textContent = "AcceptingΓÇª";
       try {
         await FriendSystem.acceptRequest(from, me.email);
         const actionsEl = document.getElementById(`notif-actions-${notifId}`);
-        if (actionsEl) actionsEl.innerHTML = '<span class="notif-done">✅ You are now friends!</span>';
+        if (actionsEl) actionsEl.innerHTML = '<span class="notif-done">Γ£à You are now friends!</span>';
       } catch(e) {
         btn.disabled = false;
-        btn.textContent = "✓ Accept";
+        btn.textContent = "Γ£ô Accept";
         alert("Could not accept: " + e.message);
       }
     });

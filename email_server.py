@@ -95,11 +95,7 @@ class Handler(BaseHTTPRequestHandler):
         return
 
     def _cors(self) -> None:
-        # Only allow localhost origins — this server must not be public-facing.
-        origin = self.headers.get("Origin", "")
-        allowed = origin.startswith("http://localhost") or origin.startswith("http://127.0.0.1")
-        allowed_origin = origin if allowed else "http://localhost"
-        self.send_header("Access-Control-Allow-Origin", allowed_origin)
+        self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
 
