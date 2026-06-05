@@ -1,15 +1,12 @@
 
 
-const SERVER_URL = "https://sacrifice-oboe-ruckus.ngrok-free.dev/analyze";
+const SERVER_URL = "https://kfokesfojefoef-sanatio-ai-server.hf.space/api/analyze";
 
 async function analyzeWithServer(dataUrl) {
   const response = await fetch(SERVER_URL, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "ngrok-skip-browser-warning": "69420",
-    },
-    body: JSON.stringify({ image: dataUrl }),
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ data: [dataUrl] }),
   });
 
   if (!response.ok) {
@@ -17,7 +14,14 @@ async function analyzeWithServer(dataUrl) {
     throw new Error(err.error || "Server error");
   }
 
-  return await response.json();
+  const result = await response.json();
+  // HF Gradio API returns { data: [returnValue] }
+  const data = result.data ? result.data[0] : result;
+  return {
+    aiScore:     data.aiScore     ?? data.ai_score     ?? 50,
+    realScore:   data.realScore   ?? data.real_score   ?? 50,
+    likelyLabel: data.likelyLabel ?? data.likely_label ?? "Unknown",
+  };
 }
 
 const PhotoAiModel = {
@@ -27,6 +31,6 @@ const PhotoAiModel = {
   isReady() { return true; },
   async loadModel() { return true; },
   getMeta() {
-    return { dataset: "ResNet18 via Colab server" };
+    return { dataset: "ResNet18 via Hugging Face Spaces" };
   },
 };
