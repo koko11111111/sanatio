@@ -153,25 +153,8 @@ function showLoggedInNotice() {
   const user = getCurrentUser();
   if (!user) return;
 
-  const card = document.querySelector(".auth-layout .card");
-  if (!card || document.getElementById("logged-in-notice")) return;
-
-  const notice = document.createElement("div");
-  notice.id = "logged-in-notice";
-  notice.className = "logged-in-notice";
-  notice.innerHTML = `
-    <p>You are already signed in as <strong>${escapeAuthHtml(user.name || user.email)}</strong>.</p>
-    <div class="logged-in-notice-actions">
-      <a class="btn btn-primary" href="aipage.html">Go to Dashboard</a>
-      <button type="button" class="btn btn-secondary" id="auth-logout-btn">Log Out</button>
-    </div>
-  `;
-  card.insertBefore(notice, card.firstChild.nextSibling);
-
-  document.getElementById("auth-logout-btn")?.addEventListener("click", () => {
-    logoutCurrentUser();
-    window.location.reload();
-  });
+  // Auto-redirect to dashboard — no point showing login/signup to a logged-in user
+  window.location.href = "aipage.html";
 }
 
 function escapeAuthHtml(text) {
