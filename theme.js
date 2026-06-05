@@ -1,34 +1,49 @@
 /**
- * SANATIO theme.js — must be loaded in <head> BEFORE styles.css
- * Applies saved theme instantly to prevent flash, wires toggle buttons.
+ * theme.js — Light/dark theme toggle.
+ * Loaded as the first script on every page so the correct theme is applied
+ * before any content paints (avoids flash of wrong theme).
  */
 (function () {
-  const KEY = "sanatioTheme";
+  const STORAGE_KEY = "sanatioTheme";
 
-  function apply(theme) {
+  function applyTheme(theme) {
     document.documentElement.setAttribute("data-theme", theme);
-    document.querySelectorAll(".theme-toggle").forEach(btn => {
-      btn.textContent = theme === "light" ? "🌙" : "☀️";
-      btn.setAttribute("aria-label", theme === "light" ? "Switch to dark mode" : "Switch to light mode");
+    // Keep the toggle button icon in sync if it already exists in the DOM.
+    const btn = document.getElementById("theme-toggle");
+    if (btn) btn.setAttribute("aria-label", theme === "dark" ? "Switch to light theme" : "Switch to dark theme");
+  }
+
+  function getSavedTheme() {
+    try { return localStorage.getItem(STORAGE_KEY); } catch { return null; }
+  }
+
+  function getPreferredTheme() {
+    const saved = getSavedTheme();
+    if (saved === "dark" || saved === "light") return saved;
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  }
+
+  // Apply immediately so there's no flash.
+  applyTheme(getPreferredTheme());
+
+  // Wire the toggle button once the DOM is ready.
+  function setupToggle() {
+    const btn = document.getElementById("theme-toggle");
+    if (!btn) return;
+
+    const current = document.documentElement.getAttribute("data-theme") || "dark";
+    btn.setAttribute("aria-label", current === "dark" ? "Switch to light theme" : "Switch to dark theme");
+
+    btn.addEventListener("click", () => {
+      const next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+      applyTheme(next);
+      try { localStorage.setItem(STORAGE_KEY, next); } catch {}
     });
   }
 
-  function saved() { return localStorage.getItem(KEY) || "dark"; }
-
-  function toggle() {
-    const next = saved() === "dark" ? "light" : "dark";
-    localStorage.setItem(KEY, next);
-    apply(next);
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", setupToggle);
+  } else {
+    setupToggle();
   }
-
-  // Apply IMMEDIATELY — before any CSS paints — to prevent flash
-  apply(saved());
-
-  document.addEventListener("DOMContentLoaded", function () {
-    apply(saved()); // re-apply after DOM so buttons update too
-    document.querySelectorAll(".theme-toggle").forEach(btn => {
-      btn.removeEventListener("click", toggle); // avoid double binding
-      btn.addEventListener("click", toggle);
-    });
-  });
 })();

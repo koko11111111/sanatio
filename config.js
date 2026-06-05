@@ -1,9 +1,14 @@
-// ─── Configuration loaded from environment variables ──────────────────────
-// IMPORTANT: Never commit secrets to this file. Use .env instead.
-// See .env.example for setup instructions.
+// ─── Configuration ─────────────────────────────────────────────────────────
+// IMPORTANT: Never commit real secrets to this file.
+// Copy .env.example to .env and fill in your values.
+// This file holds only placeholder values safe to commit.
+// For a static HTML project without a build step, replace the placeholder
+// strings below with your real values locally and do NOT commit that change
+// (add config.js to .gitignore, or use a build process to inject env vars).
 
 // ─── Google Sign-In ────────────────────────────────────────────────────────
-const GOOGLE_CLIENT_ID = "1074937897394-t25qprjhculhc7n84rfd5a2viars7ajc.apps.googleusercontent.com";
+// Replace with your Google OAuth 2.0 Client ID from console.cloud.google.com
+const GOOGLE_CLIENT_ID = "";
 
 // ─── Password reset emails ─────────────────────────────────────────────────
 const EMAIL_API_URL = "http://localhost:3001/api/send-reset";
@@ -14,12 +19,13 @@ const EMAILJS_SERVICE_ID = "";
 const EMAILJS_TEMPLATE_ID = "";
 
 // ─── Firebase (shared community posts) ────────────────────────────────────
+// Replace with your Firebase project config from console.firebase.google.com
 const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyDscfjRQyBNDhAKMBhCCmdj8OTFeb_L3Yo",
-  authDomain: "sanatio-c4122.firebaseapp.com",
-  projectId: "sanatio-c4122",
-  storageBucket: "sanatio-c4122.firebasestorage.app",
-  messagingSenderId: "580426949606",
-  appId: "1:580426949606:web:4519fbccfb0e21db4cec27",
-  measurementId: "G-CKG9HE5QXG",
+  apiKey: "",
+  authDomain: "",
+  projectId: "",
+  storageBucket: "",
+  messagingSenderId: "",
+  appId: "",
+  measurementId: "",
 };

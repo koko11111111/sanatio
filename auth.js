@@ -2,6 +2,64 @@ const USERS_KEY = "aiDetectorUsers";
 const REMEMBERED_EMAIL_KEY = "aiDetectorRememberedEmail";
 const CURRENT_USER_KEY = "aiDetectorCurrentUser";
 
+// ── Secure password hashing (PBKDF2 via WebCrypto) ────────────────────────
+// Stores as "pbkdf2:<base64-salt>:<base64-hash>" so it is self-describing.
+
+async function securePasswordStore(password) {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const keyMaterial = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(password),
+    "PBKDF2",
+    false,
+    ["deriveBits"]
+  );
+  const bits = await crypto.subtle.deriveBits(
+    { name: "PBKDF2", salt, iterations: 200000, hash: "SHA-256" },
+    keyMaterial,
+    256
+  );
+  const saltB64 = btoa(String.fromCharCode(...salt));
+  const hashB64 = btoa(String.fromCharCode(...new Uint8Array(bits)));
+  return `pbkdf2:${saltB64}:${hashB64}`;
+}
+
+async function verifyStoredPassword(password, stored) {
+  if (!stored || typeof stored !== "string") return false;
+
+  // Legacy: plain-text passwords stored before hashing was added
+  if (!stored.startsWith("pbkdf2:")) {
+    return password === stored;
+  }
+
+  const parts = stored.split(":");
+  if (parts.length !== 3) return false;
+  const salt = Uint8Array.from(atob(parts[1]), c => c.charCodeAt(0));
+  const expectedHash = atob(parts[2]);
+
+  const keyMaterial = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(password),
+    "PBKDF2",
+    false,
+    ["deriveBits"]
+  );
+  const bits = await crypto.subtle.deriveBits(
+    { name: "PBKDF2", salt, iterations: 200000, hash: "SHA-256" },
+    keyMaterial,
+    256
+  );
+  const actualHash = String.fromCharCode(...new Uint8Array(bits));
+
+  // Constant-time comparison to prevent timing attacks
+  if (actualHash.length !== expectedHash.length) return false;
+  let diff = 0;
+  for (let i = 0; i < actualHash.length; i++) {
+    diff |= actualHash.charCodeAt(i) ^ expectedHash.charCodeAt(i);
+  }
+  return diff === 0;
+}
+
 function isStorageAvailable() {
   try {
     const testKey = "__sanatio_storage_test__";
@@ -118,13 +176,18 @@ function saveProfilePhotoForCurrentUser(photoDataUrl) {
 function requireLoginForPage() {
   const path = (window.location.pathname || "").toLowerCase();
   const href = (window.location.href || "").toLowerCase();
-  const isProtected =
-    path.endsWith("aipage.html") ||
-    path.endsWith("/aipage.html") ||
-    path.endsWith("community.html") ||
-    path.endsWith("/community.html") ||
-    href.includes("aipage.html") ||
-    href.includes("community.html");
+
+  const PROTECTED_PAGES = [
+    "aipage.html",
+    "community.html",
+    "admin.html",
+    "friends.html",
+    "messages.html",
+  ];
+
+  const isProtected = PROTECTED_PAGES.some(
+    (page) => path.endsWith("/" + page) || path.endsWith(page) || href.includes(page)
+  );
   if (!isProtected) return;
 
   if (!getCurrentUser()) {

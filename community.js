@@ -310,8 +310,12 @@ function runCommunityPage() {
   function startLocalFeed() {
     try {
       const raw = JSON.parse(localStorage.getItem(LOCAL_POSTS_KEY)) || [];
-      // Add fake IDs for local posts so the same render function works
-      const posts = raw.slice().reverse().map((p, i) => ({ id: String(i), ...p }));
+      // Assign each post its real array index as the ID so delete/reaction
+      // operations can find the correct entry regardless of list size.
+      const posts = raw.slice().reverse().map((p, i, arr) => ({
+        id: String(raw.length - 1 - i), // stable index into the raw array
+        ...p,
+      }));
       renderFeed(posts);
     } catch {
       communityFeed.innerHTML = '<p class="community-empty">No posts yet.</p>';
@@ -333,10 +337,24 @@ function runCommunityPage() {
 
   async function toggleReaction(docId, reaction) {
     if (!db) {
-      // local fallback
+      // Local fallback: reactions in local mode require stable IDs.
+      // Local posts are stored in an array; docId is the array index as string.
       const posts = getLocalPosts();
-      const idx = posts.findIndex((_, i) => String(posts.length - 1 - i) === docId);
-      // crude: just re-render without persisting (local mode limitation)
+      const idx = parseInt(docId, 10);
+      if (isNaN(idx) || !posts[idx]) return;
+      const post = posts[idx];
+      const email = currentUser.email;
+      let likes = post.likes || [];
+      let dislikes = post.dislikes || [];
+      if (reaction === "like") {
+        likes = likes.includes(email) ? likes.filter(e => e !== email) : [...likes.filter(e => e !== email), email];
+        dislikes = dislikes.filter(e => e !== email);
+      } else {
+        dislikes = dislikes.includes(email) ? dislikes.filter(e => e !== email) : [...dislikes.filter(e => e !== email), email];
+        likes = likes.filter(e => e !== email);
+      }
+      posts[idx] = { ...post, likes, dislikes };
+      localStorage.setItem(LOCAL_POSTS_KEY, JSON.stringify(posts));
       startLocalFeed();
       return;
     }
@@ -403,11 +421,13 @@ function runCommunityPage() {
   async function deletePost(docId) {
     if (!confirm("Delete this post?")) return;
     if (!db) {
+      // Local mode: docId is the stable array index assigned at render time.
       const posts = getLocalPosts();
-      // Remove by reverse index
-      const idx = posts.length - 1 - parseInt(docId, 10);
-      if (idx >= 0) posts.splice(idx, 1);
-      localStorage.setItem(LOCAL_POSTS_KEY, JSON.stringify(posts));
+      const idx = parseInt(docId, 10);
+      if (!isNaN(idx) && idx >= 0 && idx < posts.length) {
+        posts.splice(idx, 1);
+        localStorage.setItem(LOCAL_POSTS_KEY, JSON.stringify(posts));
+      }
       startLocalFeed();
       return;
     }

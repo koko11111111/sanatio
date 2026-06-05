@@ -24,6 +24,16 @@ def _unpickle_file(path: Path) -> dict:
         return pickle.load(handle, encoding="bytes")
 
 
+def _safe_extractall(tar: tarfile.TarFile, dest: Path) -> None:
+    """Extract a tar archive while preventing path traversal (Zip Slip)."""
+    dest_resolved = dest.resolve()
+    for member in tar.getmembers():
+        member_path = (dest / member.name).resolve()
+        if not str(member_path).startswith(str(dest_resolved)):
+            raise ValueError(f"Unsafe tar entry rejected (path traversal): {member.name}")
+    tar.extractall(dest)
+
+
 def download_cifar10(cache_dir: Path) -> Path:
     cache_dir.mkdir(parents=True, exist_ok=True)
     tar_path = cache_dir / "cifar-10-python.tar.gz"
@@ -35,7 +45,7 @@ def download_cifar10(cache_dir: Path) -> Path:
             urllib.request.urlretrieve(CIFAR_URL, tar_path)
         print("Extracting CIFAR-10…")
         with tarfile.open(tar_path, "r:gz") as tar:
-            tar.extractall(cache_dir)
+            _safe_extractall(tar, cache_dir)
 
     return extract_dir
 

@@ -168,6 +168,11 @@ async function runFriendsPage() {
   }
 
   // ── Search ─────────────────────────────────────────────────────────────
+  // NOTE: This fetches the entire users collection client-side because
+  // Firestore doesn't support full-text search natively. For production with
+  // a large user base, replace this with Algolia, Typesense, or a Firebase
+  // Extension for full-text search, or use Firestore range queries on a
+  // normalized field (e.g. nameLower >= q && nameLower < q + '\uf8ff').
   let searchDebounce = null;
   searchInput.addEventListener("input", () => {
     clearTimeout(searchDebounce);

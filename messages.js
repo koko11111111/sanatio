@@ -101,6 +101,9 @@ async function runMessagesPage() {
   }
 
   // ── User search ────────────────────────────────────────────────────────
+  // NOTE: This fetches the full users collection for client-side filtering.
+  // Fine for small user bases; replace with a proper search index
+  // (Algolia, Typesense, Firebase Extension) for production scale.
   function setupSearch(inputEl, resultsEl) {
     let debounce = null;
     inputEl.addEventListener("input", () => {
