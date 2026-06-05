@@ -1,11 +1,8 @@
-/**
- * SANATIO navbar.js
- * - Single profile menu (replaces old top-profile div)
- * - Syncs current user to Firebase on every page load
- * - Rounded pill nav buttons
- */
+
 
 (function () {
+  const ADMIN_EMAIL = "kamols2642009@gmail.com";
+
   function safeImg(url, name) {
     const v = String(url||"").trim();
     if (v.startsWith("data:image/")||v.startsWith("http://")||v.startsWith("https://")) return v;
@@ -48,6 +45,8 @@
 
   function buildNav(me) {
     document.getElementById("sanatio-navbar")?.remove();
+
+    const isAdmin = me.email === ADMIN_EMAIL;
 
     const nav = document.createElement("nav");
     nav.id = "sanatio-navbar";
@@ -109,6 +108,7 @@
               <a class="snav-drop-item" href="settings.html">⚙️ Settings &amp; Edit Profile</a>
               <label class="snav-drop-item snav-drop-label" for="snav-photo-input">📷 Change Photo<input id="snav-photo-input" type="file" accept="image/*" hidden></label>
               <a class="snav-drop-item" href="friends.html">👥 Find Friends</a>
+              ${isAdmin ? `<div class="snav-drop-divider"></div><a class="snav-drop-item" href="admin.html" style="color:#f87171">🔒 Admin Panel</a>` : ""}
               <div class="snav-drop-divider"></div>
               <button class="snav-drop-item snav-drop-btn" id="snav-logout">🚪 Log Out</button>
             </div>
@@ -138,15 +138,11 @@
       const reader = new FileReader();
       reader.onload = () => {
         const url = String(reader.result||"");
-        // Update all avatar images in navbar
         document.getElementById("snav-avatar").src = url;
         document.getElementById("snav-drop-avatar-img").src = url;
-        // Also update hidden shim profile photo if exists
         const shimPhoto = document.getElementById("profile-photo");
         if (shimPhoto) shimPhoto.src = url;
-        // Save via auth.js
         if (typeof saveProfilePhotoForCurrentUser==="function") saveProfilePhotoForCurrentUser(url);
-        // Sync to Firebase
         syncCurrentUser({...me, profilePhoto: url});
       };
       reader.readAsDataURL(file);
@@ -156,7 +152,6 @@
     function updateThemeIcon(theme) {
       const icon = document.getElementById("snav-theme-icon");
       if (!icon) return;
-      // Sun icon for dark mode (click to go light), Moon for light mode (click to go dark)
       if (theme === "light") {
         icon.innerHTML = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
       } else {
@@ -218,7 +213,7 @@
     const me = getCurrentUser();
     if (!me) return;
     buildNav(me);
-    syncCurrentUser(me); // always sync on page load so Google users appear in search
+    syncCurrentUser(me);
   }
 
   if (document.readyState==="loading") {
