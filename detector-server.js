@@ -3,7 +3,7 @@
  * Uses ResNet18 via Hugging Face Spaces
  */
 
-const SERVER_URL = "https://kfokesfojefoef-sanatio-ai-server.hf.space/api/analyze";
+const SERVER_URL = "https://kfokesfojefoef-sanatio-ai-server.hf.space/api/predict_image";
 
 async function analyzeWithServer(dataUrl) {
   const response = await fetch(SERVER_URL, {
