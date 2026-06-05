@@ -1,48 +1,36 @@
 /**
  * SANATIO detector-server.js
- * Uses ResNet18 via Hugging Face Spaces (Gradio 5 API format)
+ * Uses ResNet18 via Hugging Face Spaces (Gradio 5)
  */
 
 const HF_SPACE = "https://kfokesfojefoef-sanatio-ai-server.hf.space";
 
 async function analyzeWithServer(dataUrl) {
-  // Step 1: queue the job
-  const queueRes = await fetch(`${HF_SPACE}/queue/join`, {
+  // Use Gradio's /run/predict endpoint (works on both Gradio 4 and 5)
+  const response = await fetch(`${HF_SPACE}/run/predict`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
+      fn_index: 1,
       data: [dataUrl],
-      fn_index: 1,  // analyze_base64 is the second function
-      session_hash: Math.random().toString(36).slice(2),
     }),
   });
 
-  if (!queueRes.ok) throw new Error("Could not reach HF Space");
+  if (!response.ok) {
+    throw new Error(`Server returned ${response.status}`);
+  }
 
-  const { event_id } = await queueRes.json();
+  const result = await response.json();
+  const output = result.data?.[0];
 
-  // Step 2: poll for result
-  return new Promise((resolve, reject) => {
-    const es = new EventSource(`${HF_SPACE}/queue/data?session_hash=${event_id}`);
-    es.onmessage = (e) => {
-      const msg = JSON.parse(e.data);
-      if (msg.msg === "process_completed") {
-        es.close();
-        const output = msg.output?.data?.[0];
-        if (!output) return reject(new Error("No output from server"));
-        resolve({
-          aiScore:     output.aiScore     ?? 50,
-          realScore:   output.realScore   ?? 50,
-          likelyLabel: output.likelyLabel ?? "Unknown",
-        });
-      } else if (msg.msg === "process_errored") {
-        es.close();
-        reject(new Error(msg.output?.error || "Server error"));
-      }
-    };
-    es.onerror = () => { es.close(); reject(new Error("Connection lost")); };
-    setTimeout(() => { es.close(); reject(new Error("Timeout")); }, 30000);
-  });
+  if (!output) throw new Error("No output from server");
+  if (output.error) throw new Error(output.error);
+
+  return {
+    aiScore:     output.aiScore     ?? 50,
+    realScore:   output.realScore   ?? 50,
+    likelyLabel: output.likelyLabel ?? "Unknown",
+  };
 }
 
 const PhotoAiModel = {
