@@ -18,7 +18,6 @@ async function analyzeWithServer(dataUrl) {
   if (!response.ok) throw new Error(`Server error ${response.status}`);
 
   const result = await response.json();
-  // Gradio returns { data: ["json_string"] }
   const jsonStr = result.data?.[0];
   if (!jsonStr) throw new Error("No output from server");
 
