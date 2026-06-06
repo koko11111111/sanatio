@@ -1,6 +1,7 @@
 function runDetectorPage() {
   const HISTORY_KEY_PREFIX = "aiDetectorHistory_";
   const LAST_SCAN_KEY = "aiDetectorLastScan";
+  const QUEUE_KEY = "sanatioReviewQueue";
 
   function historyKey(email) {
     return HISTORY_KEY_PREFIX + email;
@@ -13,6 +14,27 @@ function runDetectorPage() {
 
   function saveHistory(email, entries) {
     localStorage.setItem(historyKey(email), JSON.stringify(entries));
+  }
+
+  function saveToQueue(dataUrl, aiScore, realScore, likelyLabel) {
+    try {
+      const queue = JSON.parse(localStorage.getItem(QUEUE_KEY)) || [];
+      const timestamp = Date.now();
+      const name = `scan_${timestamp}.jpg`;
+      
+      queue.push({
+        name,
+        dataUrl,
+        aiScore,
+        realScore,
+        likelyLabel,
+        createdAt: new Date().toISOString(),
+      });
+      
+      localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
+    } catch (e) {
+      console.warn("Failed to save to queue:", e);
+    }
   }
 
   function saveLastScan(scan) {
@@ -234,6 +256,10 @@ function runDetectorPage() {
           saveHistory(current.email, entries);
           renderHistory(current.email);
         }
+
+        // Save to review queue for admin retraining
+        const realScore = 100 - finalScore;
+        saveToQueue(thumb, finalScore, realScore, likelyLabel);
       }, wait);
     }
 
