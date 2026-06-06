@@ -1,10 +1,4 @@
-/**
- * Password Hashing & Verification Utilities
- * Uses PBKDF2 (built-in Web Crypto API) for secure password hashing
- * This prevents plaintext password storage
- */
 
-// Configuration for PBKDF2
 const HASH_CONFIG = {
   algorithm: "PBKDF2",
   hash: "SHA-256",
