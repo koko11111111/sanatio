@@ -1,14 +1,3 @@
-/**
- * SANATIO photo-model.js v2
- * Browser inference for AI vs real photo classifier.
- * Model file: assets/model/ai-detector.json (created by train-model.bat)
- *
- * Changes from v1:
- *  - Threshold now 50% (model v2 is properly calibrated, no need to adjust)
- *  - Added model version check and warning for old v1 models
- *  - Feature extraction matches train_model.py exactly
- *  - Better error messages
- */
 const PhotoAiModel = (function () {
   const MODEL_URL = "assets/model/ai-detector.json";
   let model = null;
