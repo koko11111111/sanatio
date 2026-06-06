@@ -373,7 +373,7 @@
         return false;
       }
 
-      if (me.email !== ADMIN_EMAILS[0] && !ADMIN_EMAILS.includes(me.email)) {
+      if (!ADMIN_EMAILS.includes(me.email)) {
         root.innerHTML = `
           <div class="admin-denied">
             <div class="admin-denied-icon">🚫</div>
