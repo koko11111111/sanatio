@@ -1,7 +1,3 @@
-/**
- * SANATIO messages.js — Full Messenger-style private chat
- * Fixed: conversation listener error handling, index fallback, Firebase init guard
- */
 
 function escHtml(t) { return String(t||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;"); }
 function safeImg(url, name) {
