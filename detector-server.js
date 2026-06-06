@@ -1,7 +1,3 @@
-/**
- * SANATIO detector-server.js
- * Uses ResNet18 via Hugging Face Spaces (Docker/FastAPI)
- */
 
 const SERVER_URL = "https://kfokesfojefoef-sanatio-ai-server.hf.space/analyze";
 
