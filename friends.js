@@ -1,11 +1,4 @@
-/**
- * SANATIO friends.js
- * Shared friend-request & friendship logic (Firestore).
- *
- * Firestore collections:
- *   friendRequests/{id}  { from, to, status: "pending"|"accepted"|"declined", createdAt }
- *   friends/{userEmailKey}  { friends: [email, ...] }
- */
+
 
 const FriendSystem = (function () {
 
