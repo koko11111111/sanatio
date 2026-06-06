@@ -1,11 +1,3 @@
-/**
- * SANATIO profile.js — Fixed:
- * - Edit controls only show for own profile (isOwn guard hardened)
- * - Posts load with email+author fallback
- * - Friends grid loads correctly
- * - Firebase already initialized in profile.html
- */
-
 function escHtml(t) {
   return String(t||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
 }
