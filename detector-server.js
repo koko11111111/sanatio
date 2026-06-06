@@ -1,27 +1,23 @@
 /**
  * SANATIO detector-server.js
- * Uses ResNet18 via Hugging Face Spaces
+ * Uses ResNet18 via Hugging Face Spaces (Docker/FastAPI)
  */
 
-const HF_SPACE = "https://kfokesfojefoef-sanatio-ai-server.hf.space";
+const SERVER_URL = "https://kfokesfojefoef-sanatio-ai-server.hf.space/analyze";
 
 async function analyzeWithServer(dataUrl) {
-  const response = await fetch(`${HF_SPACE}/run/predict`, {
+  const response = await fetch(SERVER_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      fn_index: 0,
-      data: [dataUrl],
-    }),
+    body: JSON.stringify({ image: dataUrl }),
   });
 
-  if (!response.ok) throw new Error(`Server error ${response.status}`);
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || `Server error ${response.status}`);
+  }
 
-  const result = await response.json();
-  const jsonStr = result.data?.[0];
-  if (!jsonStr) throw new Error("No output from server");
-
-  const data = typeof jsonStr === "string" ? JSON.parse(jsonStr) : jsonStr;
+  const data = await response.json();
   if (data.error) throw new Error(data.error);
 
   return {
