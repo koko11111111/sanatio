@@ -1,7 +1,4 @@
-﻿/**
- * SANATIO notifications.js
- * Fixed: don't mark as read immediately on load, show all notifications properly
- */
+
 
 function escHtml(t) {
   return String(t||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
@@ -28,7 +25,6 @@ async function runNotificationsPage() {
   const me = getCurrentUser();
   if (!me) { window.location.href = "login.html"; return; }
 
-  // Init Firebase
   let db = null;
   try {
     if (typeof FIREBASE_CONFIG==="object" && FIREBASE_CONFIG?.apiKey) {
@@ -41,14 +37,12 @@ async function runNotificationsPage() {
   const feed       = document.getElementById("notif-feed");
   const markAllBtn = document.getElementById("notif-mark-all");
 
-  feed.innerHTML = '<p class="fb-empty">Loading notificationsΓÇª</p>';
+  feed.innerHTML = '<p class="fb-empty">Loading notifications…</p>';
 
-  // Load notifications first ΓÇö DON'T mark as read yet
   let notifs = [];
   try {
     notifs = await FriendSystem.getNotifications(me.email);
   } catch(e) {
-    console.error("getNotifications error:", e);
     feed.innerHTML = '<p class="fb-empty">Could not load notifications. Please try again.</p>';
     return;
   }
@@ -74,40 +68,43 @@ async function runNotificationsPage() {
     }
   }
 
-  // Render
+  // Render — whole row is clickable, actions still work
   feed.innerHTML = notifs.map(n => {
     const sender = senderCache[n.from] || { name: n.from||"Someone", photo: "" };
-    let icon = "≡ƒöö", text = "";
+    let icon = "🔔", text = "";
 
     if (n.type === "friend_request") {
-      icon = "≡ƒæñ";
+      icon = "👤";
       text = `<strong>${escHtml(sender.name)}</strong> sent you a friend request.`;
     } else if (n.type === "friend_accepted") {
-      icon = "Γ£à";
+      icon = "✅";
       text = `<strong>${escHtml(sender.name)}</strong> accepted your friend request. You are now friends!`;
     } else if (n.type === "message") {
-      icon = "≡ƒÆ¼";
+      icon = "💬";
       text = `<strong>${escHtml(sender.name)}</strong> sent you a message.`;
     } else {
       text = `<strong>${escHtml(sender.name)}</strong> interacted with you.`;
     }
 
-    const actionHtml = n.type === "friend_request" ? `
-      <div class="notif-actions" id="notif-actions-${escHtml(n.id)}">
-        <button class="btn btn-primary btn-small notif-accept" data-from="${escHtml(n.from)}" data-notif="${escHtml(n.id)}">Γ£ô Accept</button>
-        <button class="btn btn-secondary btn-small notif-decline" data-from="${escHtml(n.from)}" data-notif="${escHtml(n.id)}">Γ£ò Decline</button>
-      </div>` : "";
-
     const linkHref = n.type === "message"
       ? "messages.html"
       : `profile.html?user=${encodeURIComponent(n.from||"")}`;
 
+    const actionHtml = n.type === "friend_request" ? `
+      <div class="notif-actions" id="notif-actions-${escHtml(n.id)}">
+        <button class="btn btn-primary btn-small notif-accept" data-from="${escHtml(n.from)}" data-notif="${escHtml(n.id)}">✓ Accept</button>
+        <button class="btn btn-secondary btn-small notif-decline" data-from="${escHtml(n.from)}" data-notif="${escHtml(n.id)}">✕ Decline</button>
+      </div>` : "";
+
     return `
-      <div class="notif-item${n.read ? "" : " unread"}" id="notif-${escHtml(n.id)}">
-        <a href="${linkHref}" class="notif-avatar-link">
+      <div class="notif-item${n.read ? "" : " unread"}"
+           id="notif-${escHtml(n.id)}"
+           style="cursor:pointer"
+           data-href="${linkHref}">
+        <div class="notif-avatar-link">
           <img class="notif-avatar" src="${safeImg(sender.photo, sender.name)}" alt="${escHtml(sender.name)}">
           <span class="notif-icon">${icon}</span>
-        </a>
+        </div>
         <div class="notif-body">
           <p class="notif-text">${text}</p>
           <p class="notif-time">${timeAgo(n.createdAt)}</p>
@@ -116,11 +113,19 @@ async function runNotificationsPage() {
       </div>`;
   }).join("");
 
-  // NOW mark as read after showing them
+  // Make whole row clickable (but not when clicking accept/decline buttons)
+  feed.querySelectorAll(".notif-item").forEach(item => {
+    item.addEventListener("click", (e) => {
+      if (e.target.closest("button")) return; // don't navigate if clicking a button
+      const href = item.dataset.href;
+      if (href) window.location.href = href;
+    });
+  });
+
+  // Mark as read after showing — but DON'T hide them
   try { await FriendSystem.markNotificationsRead(me.email); } catch {}
-  // Update visual state
   feed.querySelectorAll(".notif-item.unread").forEach(el => {
-    setTimeout(() => el.classList.remove("unread"), 1000);
+    setTimeout(() => el.classList.remove("unread"), 1500);
   });
 
   // Mark all button
@@ -131,18 +136,19 @@ async function runNotificationsPage() {
 
   // Accept friend request
   feed.querySelectorAll(".notif-accept").forEach(btn => {
-    btn.addEventListener("click", async () => {
+    btn.addEventListener("click", async (e) => {
+      e.stopPropagation();
       const from = btn.dataset.from;
       const notifId = btn.dataset.notif;
       btn.disabled = true;
-      btn.textContent = "AcceptingΓÇª";
+      btn.textContent = "Accepting…";
       try {
         await FriendSystem.acceptRequest(from, me.email);
         const actionsEl = document.getElementById(`notif-actions-${notifId}`);
-        if (actionsEl) actionsEl.innerHTML = '<span class="notif-done">Γ£à You are now friends!</span>';
+        if (actionsEl) actionsEl.innerHTML = '<span class="notif-done">✅ You are now friends!</span>';
       } catch(e) {
         btn.disabled = false;
-        btn.textContent = "Γ£ô Accept";
+        btn.textContent = "✓ Accept";
         alert("Could not accept: " + e.message);
       }
     });
@@ -150,7 +156,8 @@ async function runNotificationsPage() {
 
   // Decline friend request
   feed.querySelectorAll(".notif-decline").forEach(btn => {
-    btn.addEventListener("click", async () => {
+    btn.addEventListener("click", async (e) => {
+      e.stopPropagation();
       const from = btn.dataset.from;
       const notifId = btn.dataset.notif;
       btn.disabled = true;
