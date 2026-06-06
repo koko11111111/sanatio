@@ -1,6 +1,4 @@
-// ─── Configuration loaded from environment variables ──────────────────────
-// IMPORTANT: Never commit secrets to this file. Use .env instead.
-// See .env.example for setup instructions.
+
 
 // ─── Google Sign-In ────────────────────────────────────────────────────────
 const GOOGLE_CLIENT_ID = "1074937897394-t25qprjhculhc7n84rfd5a2viars7ajc.apps.googleusercontent.com";
