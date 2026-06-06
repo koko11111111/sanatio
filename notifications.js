@@ -1,8 +1,3 @@
-/**
- * SANATIO notifications.js
- * Fixed: load more button, whole row clickable, notifications stay visible
- */
-
 function escHtml(t) {
   return String(t||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
 }
