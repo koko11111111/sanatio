@@ -1,7 +1,3 @@
-/**
- * SANATIO settings.js
- */
-
 function safeImg(url, name) {
   const v = String(url||"").trim();
   if (v.startsWith("data:image/")||v.startsWith("http://")||v.startsWith("https://")) return v;
