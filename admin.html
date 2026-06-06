@@ -671,10 +671,20 @@
     }
 
     // ── Boot ──────────────────────────────────────────────────────────────────
+    function tryBuildAdmin(attempts) {
+      const me = typeof getCurrentUser === "function" ? getCurrentUser() : null;
+      if (me) {
+        buildAdmin();
+      } else if (attempts > 0) {
+        setTimeout(() => tryBuildAdmin(attempts - 1), 300);
+      } else {
+        window.location.href = "login.html";
+      }
+    }
     if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", buildAdmin);
+      document.addEventListener("DOMContentLoaded", () => tryBuildAdmin(10));
     } else {
-      buildAdmin();
+      tryBuildAdmin(10);
     }
   </script>
 </body>
