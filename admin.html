@@ -335,12 +335,17 @@
 
     // ── Firebase ────────────────────────────────────────────────────────────
     let db = null;
-    try {
-      if (typeof FIREBASE_CONFIG === "object" && FIREBASE_CONFIG?.apiKey) {
-        if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
-        db = firebase.firestore();
-      }
-    } catch(e) { console.warn("Firebase:", e); }
+    function initDb() {
+      try {
+        if (typeof firebase === "undefined") return null;
+        if (typeof FIREBASE_CONFIG === "object" && FIREBASE_CONFIG?.apiKey) {
+          if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+          return firebase.firestore();
+        }
+      } catch(e) { console.warn("Firebase:", e); }
+      return null;
+    }
+    db = initDb();
 
     // ── Helpers ─────────────────────────────────────────────────────────────
     function escHtml(t) {
@@ -683,6 +688,8 @@
     function tryBuildAdmin(attempts) {
       const me = typeof getCurrentUser === "function" ? getCurrentUser() : null;
       if (me) {
+        // Re-init db in case Firebase loaded after page start
+        if (!db) db = initDb();
         buildAdmin();
       } else if (attempts > 0) {
         setTimeout(() => tryBuildAdmin(attempts - 1), 300);
