@@ -1,8 +1,3 @@
-/**
- * theme.js — Light/dark theme toggle.
- * Loaded as the first script on every page so the correct theme is applied
- * before any content paints (avoids flash of wrong theme).
- */
 (function () {
   const STORAGE_KEY = "sanatioTheme";
 
