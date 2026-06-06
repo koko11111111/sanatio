@@ -1,4 +1,10 @@
-
+/**
+ * SANATIO navbar.js
+ * - Single profile menu (replaces old top-profile div)
+ * - Syncs current user to Firebase on every page load
+ * - Rounded pill nav buttons
+ * - Admin link only for admin email
+ */
 
 (function () {
   const ADMIN_EMAIL = "kamols2642009@gmail.com";

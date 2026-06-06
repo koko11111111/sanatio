@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SANATIO | AI Lab</title>
+  <script src="theme.js"></script>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    /* ── Lab-specific styles ─────────────────────────────────────────── */
+    .lab-layout {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+    }
+
+    .lab-tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 2rem;
+      border-bottom: 1px solid rgba(143,123,63,0.2);
+      padding-bottom: 0;
+    }
+
+    .lab-tab {
+      background: none;
+      border: none;
+      color: var(--text-muted, #9ca3af);
+      font-size: 0.95rem;
+      font-weight: 600;
+      padding: 0.75rem 1.5rem;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: color 0.2s, border-color 0.2s;
+      letter-spacing: 0.03em;
+    }
+
+    .lab-tab:hover { color: #c9a84c; }
+    .lab-tab.active {
+      color: #c9a84c;
+      border-bottom-color: #c9a84c;
+    }
+
+    .lab-panel { display: none; }
+    .lab-panel.active { display: block; }
+
+    /* ── Detector panel ──────────────────────────────────────────────── */
+    .lab-detector-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    @media (max-width: 700px) {
+      .lab-detector-grid { grid-template-columns: 1fr; }
+    }
+
+    .lab-card {
+      background: var(--card-bg, #0f1a0f);
+      border: 1px solid rgba(143,123,63,0.18);
+      border-radius: 14px;
+      padding: 1.75rem;
+    }
+
+    .lab-upload-zone {
+      border: 2px dashed rgba(143,123,63,0.35);
+      border-radius: 10px;
+      background: rgba(143,123,63,0.04);
+      min-height: 220px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .lab-upload-zone:hover,
+    .lab-upload-zone.dragover {
+      border-color: #c9a84c;
+      background: rgba(143,123,63,0.09);
+    }
+
+    .lab-upload-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+
+    .lab-upload-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+    .lab-upload-label { color: var(--text-muted, #9ca3af); font-size: 0.9rem; text-align: center; }
+    .lab-upload-label strong { color: #c9a84c; }
+
+    .lab-preview-img {
+      width: 100%;
+      max-height: 280px;
+      object-fit: contain;
+      border-radius: 8px;
+      display: none;
+    }
+
+    .lab-analyze-btn {
+      width: 100%;
+      margin-top: 1rem;
+      padding: 0.85rem;
+      background: linear-gradient(135deg, #8f7b3f, #c9a84c);
+      color: #0a120a;
+      font-weight: 700;
+      font-size: 1rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      letter-spacing: 0.04em;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+
+    .lab-analyze-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+    .lab-analyze-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    /* Result card */
+    .lab-result-card {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .lab-verdict {
+      font-size: 1.6rem;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      min-height: 2.5rem;
+    }
+
+    .lab-verdict.real { color: #4ade80; }
+    .lab-verdict.ai   { color: #f87171; }
+    .lab-verdict.idle { color: var(--text-muted, #9ca3af); font-weight: 400; font-size: 1rem; }
+
+    .lab-bar-wrap { margin-top: 0.25rem; }
+    .lab-bar-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.82rem;
+      color: var(--text-muted, #9ca3af);
+      margin-bottom: 0.3rem;
+    }
+
+    .lab-bar-track {
+      height: 8px;
+      background: rgba(255,255,255,0.07);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .lab-bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      transition: width 0.7s cubic-bezier(.4,0,.2,1);
+      width: 0%;
+    }
+
+    .lab-bar-fill.real { background: linear-gradient(90deg, #22c55e, #4ade80); }
+    .lab-bar-fill.ai   { background: linear-gradient(90deg, #ef4444, #f87171); }
+
+    .lab-status {
+      font-size: 0.85rem;
+      color: var(--text-muted, #9ca3af);
+      min-height: 1.2rem;
+    }
+
+    .lab-status.analyzing { color: #c9a84c; }
+    .lab-status.error     { color: #f87171; }
+    .lab-status.done      { color: #4ade80; }
+
+    /* ── Admin panel ─────────────────────────────────────────────────── */
+    .admin-notice {
+      background: rgba(143,123,63,0.08);
+      border: 1px solid rgba(143,123,63,0.25);
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+      font-size: 0.88rem;
+      color: var(--text-muted, #9ca3af);
+      margin-bottom: 1.5rem;
+      line-height: 1.6;
+    }
+
+    .admin-notice strong { color: #c9a84c; }
+
+    .admin-queue-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.25rem;
+    }
+
+    .admin-queue-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #c9a84c;
+    }
+
+    .admin-retrain-btn {
+      background: rgba(143,123,63,0.15);
+      border: 1px solid rgba(143,123,63,0.4);
+      color: #c9a84c;
+      font-weight: 600;
+      font-size: 0.85rem;
+      padding: 0.5rem 1.1rem;
+      border-radius: 7px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .admin-retrain-btn:hover { background: rgba(143,123,63,0.28); }
+
+    .admin-empty {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--text-muted, #9ca3af);
+      font-size: 0.95rem;
+    }
+
+    .admin-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1rem;
+    }
+
+    .admin-item {
+      background: var(--card-bg, #0f1a0f);
+      border: 1px solid rgba(143,123,63,0.15);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+
+    .admin-item:hover { border-color: rgba(143,123,63,0.4); }
+
+    .admin-item-img {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      display: block;
+      background: #0a120a;
+    }
+
+    .admin-item-body { padding: 0.9rem; }
+    .admin-item-name {
+      font-size: 0.78rem;
+      color: var(--text-muted, #9ca3af);
+      margin-bottom: 0.75rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .admin-item-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .admin-btn {
+      flex: 1;
+      padding: 0.45rem 0.25rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+
+    .admin-btn:hover { opacity: 0.85; }
+    .admin-btn.real  { background: rgba(34,197,94,0.15); color: #4ade80; border: 1px solid rgba(74,222,128,0.3); }
+    .admin-btn.ai    { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(248,113,113,0.3); }
+    .admin-btn.del   { background: rgba(255,255,255,0.05); color: var(--text-muted,#9ca3af); border: 1px solid rgba(255,255,255,0.1); }
+
+    .admin-server-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.8rem;
+      padding: 0.3rem 0.8rem;
+      border-radius: 99px;
+      margin-bottom: 1.25rem;
+    }
+
+    .admin-server-status.online  { background: rgba(74,222,128,0.1); color: #4ade80; }
+    .admin-server-status.offline { background: rgba(248,113,113,0.1); color: #f87171; }
+
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  </style>
+</head>
+<body>
+  <script src="config.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="auth.js"></script>
+  <script src="friends.js"></script>
+  <script src="navbar.js"></script>
+
+  <div class="lab-layout">
+
+    <!-- Header -->
+    <div style="margin-bottom:2rem">
+      <h1 style="font-size:1.8rem;font-weight:800;color:#c9a84c;margin:0 0 0.3rem">AI Lab</h1>
+      <p style="color:var(--text-muted,#9ca3af);margin:0;font-size:0.95rem">Detector Agent &amp; Admin Dashboard</p>
+    </div>
+
+    <!-- Tabs -->
+    <div class="lab-tabs">
+      <button class="lab-tab active" data-tab="detector">🔍 Detector Agent</button>
+      <button class="lab-tab" data-tab="admin">⚙️ Admin Dashboard</button>
+    </div>
+
+    <!-- ── DETECTOR PANEL ──────────────────────────────────────────── -->
+    <div class="lab-panel active" id="tab-detector">
+      <div class="lab-detector-grid">
+
+        <!-- Left: upload -->
+        <div class="lab-card">
+          <h2 style="margin:0 0 1.25rem;font-size:1rem;font-weight:700;color:#c9a84c">Upload Image</h2>
+          <div class="lab-upload-zone" id="upload-zone">
+            <input type="file" id="lab-file" accept="image/*">
+            <div id="upload-placeholder">
+              <div class="lab-upload-icon">📷</div>
+              <p class="lab-upload-label">Drop image here or <strong>click to browse</strong></p>
+            </div>
+            <img class="lab-preview-img" id="lab-preview" src="" alt="Preview">
+          </div>
+          <button class="lab-analyze-btn" id="lab-analyze-btn" disabled>Analyze Photo</button>
+          <p class="lab-status" id="lab-status" style="margin-top:0.75rem"></p>
+        </div>
+
+        <!-- Right: result -->
+        <div class="lab-card lab-result-card">
+          <h2 style="margin:0 0 1.25rem;font-size:1rem;font-weight:700;color:#c9a84c">Analysis Verdict</h2>
+
+          <div class="lab-verdict idle" id="lab-verdict">Upload an image to analyze</div>
+
+          <div class="lab-bar-wrap">
+            <div class="lab-bar-label">
+              <span>Real Photo</span>
+              <span id="real-pct">—</span>
+            </div>
+            <div class="lab-bar-track">
+              <div class="lab-bar-fill real" id="real-bar"></div>
+            </div>
+          </div>
+
+          <div class="lab-bar-wrap">
+            <div class="lab-bar-label">
+              <span>AI Generated</span>
+              <span id="ai-pct">—</span>
+            </div>
+            <div class="lab-bar-track">
+              <div class="lab-bar-fill ai" id="ai-bar"></div>
+            </div>
+          </div>
+
+          <div style="margin-top:auto;padding-top:1rem;border-top:1px solid rgba(143,123,63,0.15)">
+            <p style="font-size:0.8rem;color:var(--text-muted,#9ca3af);margin:0">
+              Powered by ResNet18 trained model via local server.<br>
+              Make sure <code style="color:#c9a84c">start-server.bat</code> is running.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ADMIN PANEL ────────────────────────────────────────────── -->
+    <div class="lab-panel" id="tab-admin">
+
+      <div id="server-status-badge" class="admin-server-status offline">
+        <span class="dot"></span> Server offline
+      </div>
+
+      <div class="admin-notice">
+        <strong>How it works:</strong> Images analyzed by the detector are saved to a review queue.
+        Label each image as <strong>Real</strong> or <strong>AI</strong> — this data is sent to your
+        Python server to retrain the model and improve accuracy over time.
+        Make sure <strong>start-server.bat</strong> is running.
+      </div>
+
+      <div class="admin-queue-header">
+        <p class="admin-queue-title">Review Queue <span id="queue-count" style="font-weight:400;color:var(--text-muted,#9ca3af)"></span></p>
+        <button class="admin-retrain-btn" id="retrain-btn">⟳ Retrain Model</button>
+      </div>
+
+      <div id="admin-grid" class="admin-grid">
+        <div class="admin-empty">Loading queue…</div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const SERVER = "http://localhost:5050";
+
+    // ── Tabs ───────────────────────────────────────────────────────────────
+    document.querySelectorAll(".lab-tab").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".lab-tab").forEach(b => b.classList.remove("active"));
+        document.querySelectorAll(".lab-panel").forEach(p => p.classList.remove("active"));
+        btn.classList.add("active");
+        document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
+        if (btn.dataset.tab === "admin") loadAdminQueue();
+      });
+    });
+
+    // ── Detector ───────────────────────────────────────────────────────────
+    const fileInput    = document.getElementById("lab-file");
+    const uploadZone   = document.getElementById("upload-zone");
+    const placeholder  = document.getElementById("upload-placeholder");
+    const previewImg   = document.getElementById("lab-preview");
+    const analyzeBtn   = document.getElementById("lab-analyze-btn");
+    const statusEl     = document.getElementById("lab-status");
+    const verdictEl    = document.getElementById("lab-verdict");
+    const realPct      = document.getElementById("real-pct");
+    const aiPct        = document.getElementById("ai-pct");
+    const realBar      = document.getElementById("real-bar");
+    const aiBar        = document.getElementById("ai-bar");
+
+    let currentDataUrl = null;
+
+    function setPreview(dataUrl) {
+      currentDataUrl = dataUrl;
+      previewImg.src = dataUrl;
+      previewImg.style.display = "block";
+      placeholder.style.display = "none";
+      analyzeBtn.disabled = false;
+    }
+
+    fileInput.addEventListener("change", () => {
+      const file = fileInput.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => setPreview(reader.result);
+      reader.readAsDataURL(file);
+    });
+
+    // Drag and drop
+    uploadZone.addEventListener("dragover", e => { e.preventDefault(); uploadZone.classList.add("dragover"); });
+    uploadZone.addEventListener("dragleave", () => uploadZone.classList.remove("dragover"));
+    uploadZone.addEventListener("drop", e => {
+      e.preventDefault();
+      uploadZone.classList.remove("dragover");
+      const file = e.dataTransfer.files[0];
+      if (!file || !file.type.startsWith("image/")) return;
+      const reader = new FileReader();
+      reader.onload = () => setPreview(reader.result);
+      reader.readAsDataURL(file);
+    });
+
+    analyzeBtn.addEventListener("click", async () => {
+      if (!currentDataUrl) return;
+      analyzeBtn.disabled = true;
+      statusEl.textContent = "Analyzing…";
+      statusEl.className = "lab-status analyzing";
+      verdictEl.className = "lab-verdict idle";
+      verdictEl.textContent = "Analyzing…";
+      realBar.style.width = "0%";
+      aiBar.style.width = "0%";
+      realPct.textContent = "—";
+      aiPct.textContent = "—";
+
+      try {
+        const res = await fetch(`${SERVER}/analyze`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ image: currentDataUrl }),
+        });
+
+        if (!res.ok) throw new Error("Server error " + res.status);
+        const data = await res.json();
+
+        const isAI = data.aiScore >= 50;
+        verdictEl.textContent = isAI ? "AI GENERATED" : "REAL PHOTO";
+        verdictEl.className = "lab-verdict " + (isAI ? "ai" : "real");
+
+        realPct.textContent = data.realScore + "%";
+        aiPct.textContent   = data.aiScore   + "%";
+        realBar.style.width = data.realScore + "%";
+        aiBar.style.width   = data.aiScore   + "%";
+
+        statusEl.textContent = "Analysis complete.";
+        statusEl.className = "lab-status done";
+
+        // Save to review queue in localStorage
+        saveToQueue({ dataUrl: currentDataUrl, name: fileInput.files[0]?.name || "image.jpg", aiScore: data.aiScore, realScore: data.realScore });
+
+      } catch(e) {
+        statusEl.textContent = "Error: " + (e.message.includes("fetch") ? "Server offline — run start-server.bat" : e.message);
+        statusEl.className = "lab-status error";
+        verdictEl.textContent = "Could not analyze";
+        verdictEl.className = "lab-verdict idle";
+      }
+
+      analyzeBtn.disabled = false;
+    });
+
+    // ── Review queue (localStorage) ────────────────────────────────────────
+    const QUEUE_KEY = "sanatioReviewQueue";
+
+    function saveToQueue(item) {
+      try {
+        const q = getQueue();
+        if (q.find(i => i.name === item.name)) return; // no duplicates
+        q.push({ ...item, savedAt: new Date().toISOString() });
+        localStorage.setItem(QUEUE_KEY, JSON.stringify(q));
+      } catch {}
+    }
+
+    function getQueue() {
+      try { return JSON.parse(localStorage.getItem(QUEUE_KEY)) || []; }
+      catch { return []; }
+    }
+
+    function removeFromQueue(name) {
+      const q = getQueue().filter(i => i.name !== name);
+      localStorage.setItem(QUEUE_KEY, JSON.stringify(q));
+    }
+
+    // ── Admin ─────────────────────────────────────────────────────────────
+    async function checkServerStatus() {
+      const badge = document.getElementById("server-status-badge");
+      try {
+        const res = await fetch(`${SERVER}/analyze`, { method: "OPTIONS" });
+        badge.className = "admin-server-status online";
+        badge.innerHTML = '<span class="dot"></span> Server online';
+      } catch {
+        badge.className = "admin-server-status offline";
+        badge.innerHTML = '<span class="dot"></span> Server offline — run start-server.bat';
+      }
+    }
+
+    function loadAdminQueue() {
+      checkServerStatus();
+      const queue = getQueue();
+      const grid  = document.getElementById("admin-grid");
+      const count = document.getElementById("queue-count");
+      count.textContent = queue.length ? `(${queue.length})` : "";
+
+      if (!queue.length) {
+        grid.innerHTML = '<div class="admin-empty">✅ No images in review queue.</div>';
+        return;
+      }
+
+      grid.innerHTML = queue.map(item => `
+        <div class="admin-item" id="item-${CSS.escape(item.name)}">
+          <img class="admin-item-img" src="${item.dataUrl}" alt="${item.name}">
+          <div class="admin-item-body">
+            <p class="admin-item-name" title="${item.name}">${item.name}</p>
+            <p style="font-size:0.78rem;color:var(--text-muted,#9ca3af);margin:0 0 0.75rem">
+              AI: ${item.aiScore}% · Real: ${item.realScore}%
+            </p>
+            <div class="admin-item-actions">
+              <button class="admin-btn real" data-name="${item.name}" data-label="real">✓ Real</button>
+              <button class="admin-btn ai"   data-name="${item.name}" data-label="ai">✗ AI</button>
+              <button class="admin-btn del"  data-name="${item.name}" data-label="delete">🗑</button>
+            </div>
+          </div>
+        </div>
+      `).join("");
+
+      grid.querySelectorAll(".admin-btn").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const name  = btn.dataset.name;
+          const label = btn.dataset.label;
+          btn.disabled = true;
+
+          if (label === "delete") {
+            removeFromQueue(name);
+            loadAdminQueue();
+            return;
+          }
+
+          // Send label to server
+          try {
+            const item = getQueue().find(i => i.name === name);
+            await fetch(`${SERVER}/label`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ image: item.dataUrl, label, name }),
+            });
+          } catch {}
+
+          removeFromQueue(name);
+          loadAdminQueue();
+        });
+      });
+    }
+
+    document.getElementById("retrain-btn").addEventListener("click", async () => {
+      const btn = document.getElementById("retrain-btn");
+      btn.disabled = true;
+      btn.textContent = "⟳ Retraining…";
+      try {
+        await fetch(`${SERVER}/retrain`, { method: "POST" });
+        btn.textContent = "✓ Done!";
+        setTimeout(() => { btn.textContent = "⟳ Retrain Model"; btn.disabled = false; }, 3000);
+      } catch {
+        btn.textContent = "✗ Server offline";
+        setTimeout(() => { btn.textContent = "⟳ Retrain Model"; btn.disabled = false; }, 2000);
+      }
+    });
+  </script>
+</body>
+</html>
