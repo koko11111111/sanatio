@@ -1,7 +1,3 @@
-/**
- * SANATIO friends-page.js
- * People discovery, friend requests, search.
- */
 
 function escHtml(t) {
   return String(t||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
@@ -29,7 +25,6 @@ async function runFriendsPage() {
 
   const requestsGrid    = document.getElementById("requests-grid");
   const requestsCount   = document.getElementById("requests-count");
-  const requestsSection = document.getElementById("requests-section");
   const suggestionsGrid = document.getElementById("suggestions-grid");
   const searchSection   = document.getElementById("search-section");
   const searchGrid      = document.getElementById("search-grid");
@@ -59,6 +54,16 @@ async function runFriendsPage() {
       <button class="btn btn-primary btn-small friends-accept-btn" data-from="${escHtml(fromEmail)}">✓ Accept</button>
       <button class="btn btn-secondary btn-small friends-decline-btn" data-from="${escHtml(fromEmail)}">✕ Decline</button>`;
   }
+  function friendsDoneHtml() {
+    return `<span class="friends-done">✓ Friends now!</span>`;
+  }
+
+  // ── Update card action in all grids by email ──────────────────────────
+  function updateCardAction(email, html) {
+    const cardId = "card-" + email.replace(/[^a-z0-9]/gi,'_');
+    const card = document.getElementById(cardId);
+    if (card) card.querySelector(".friends-card-actions").innerHTML = html;
+  }
 
   // ── Wire up action buttons inside a container ──────────────────────────
   function wireButtons(container) {
@@ -69,27 +74,36 @@ async function runFriendsPage() {
         try {
           await FriendSystem.sendRequest(me.email, email);
           btn.textContent = "⏳ Sent";
+          btn.className = "btn btn-secondary btn-small";
         } catch(e) {
-          if (e.message==="already_sent") { btn.textContent="⏳ Sent"; }
-          else if (e.message==="already_friends") { btn.textContent="✓ Friends"; }
+          if (e.message==="already_sent") { btn.textContent="⏳ Sent"; btn.className="btn btn-secondary btn-small"; }
+          else if (e.message==="already_friends") { updateCardAction(email, friendsDoneHtml()); }
           else { btn.disabled=false; btn.textContent="＋ Add Friend"; alert(e.message); }
         }
       });
     });
+
     container.querySelectorAll(".friends-accept-btn").forEach(btn => {
       btn.addEventListener("click", async () => {
         const from = btn.dataset.from;
         btn.disabled = true; btn.textContent = "Accepting…";
         try {
           await FriendSystem.acceptRequest(from, me.email);
-          const card = btn.closest(".friends-person-card");
-          if (card) card.querySelector(".friends-card-actions").innerHTML =
-            '<span class="friends-done">✓ Friends now!</span>';
-          // Refresh requests count
+          // Update card in requests grid
+          updateCardAction(from, friendsDoneHtml());
+          // Update card in suggestions grid if it exists there
+          updateCardAction(from, friendsDoneHtml());
+          // Refresh both sections
           loadRequests();
-        } catch(e) { btn.disabled=false; btn.textContent="✓ Accept"; alert(e.message); }
+          loadSuggestions();
+        } catch(e) {
+          btn.disabled=false;
+          btn.textContent="✓ Accept";
+          alert(e.message);
+        }
       });
     });
+
     container.querySelectorAll(".friends-decline-btn").forEach(btn => {
       btn.addEventListener("click", async () => {
         const from = btn.dataset.from;
@@ -113,7 +127,6 @@ async function runFriendsPage() {
         return;
       }
 
-      // Fetch sender profiles
       let html = "";
       for (const req of reqs) {
         let sender = { email: req.from, name: req.from, profilePhoto: "" };
@@ -126,7 +139,6 @@ async function runFriendsPage() {
       requestsGrid.innerHTML = html;
       wireButtons(requestsGrid);
     } catch(e) {
-      console.error("loadRequests:", e);
       requestsGrid.innerHTML = '<p class="fb-empty">Could not load requests.</p>';
     }
   }
@@ -147,22 +159,20 @@ async function runFriendsPage() {
         return;
       }
 
-      // Check pending status for each
       let html = "";
       for (const u of people.slice(0, 20)) {
         let status = "none";
         try { status = await FriendSystem.getStatus(me.email, u.email); } catch {}
         let actionHtml;
-        if (status==="request_sent") actionHtml = pendingBtn();
-        else if (status==="friends") actionHtml = '<span class="friends-done">✓ Friends</span>';
+        if (status==="request_sent")     actionHtml = pendingBtn();
+        else if (status==="friends")     actionHtml = friendsDoneHtml();
         else if (status==="request_received") actionHtml = acceptDeclineBtns(u.email);
-        else actionHtml = addFriendBtn(u.email);
+        else                             actionHtml = addFriendBtn(u.email);
         html += makeCard(u, actionHtml);
       }
       suggestionsGrid.innerHTML = html;
       wireButtons(suggestionsGrid);
     } catch(e) {
-      console.error("loadSuggestions:", e);
       suggestionsGrid.innerHTML = `<p class="fb-empty">Could not load suggestions: ${e.message}</p>`;
     }
   }
@@ -194,16 +204,16 @@ async function runFriendsPage() {
           let status="none";
           try { status=await FriendSystem.getStatus(me.email, u.email); } catch {}
           let actionHtml;
-          if (status==="friends") actionHtml='<span class="friends-done">✓ Friends</span>';
-          else if (status==="request_sent") actionHtml=pendingBtn();
-          else if (status==="request_received") actionHtml=acceptDeclineBtns(u.email);
-          else actionHtml=addFriendBtn(u.email);
-          html+=makeCard(u, actionHtml);
+          if (status==="friends")           actionHtml = friendsDoneHtml();
+          else if (status==="request_sent") actionHtml = pendingBtn();
+          else if (status==="request_received") actionHtml = acceptDeclineBtns(u.email);
+          else                              actionHtml = addFriendBtn(u.email);
+          html += makeCard(u, actionHtml);
         }
-        searchGrid.innerHTML=html;
+        searchGrid.innerHTML = html;
         wireButtons(searchGrid);
       } catch(e) {
-        searchGrid.innerHTML=`<p class="fb-empty">Search error: ${e.message}</p>`;
+        searchGrid.innerHTML = `<p class="fb-empty">Search error: ${e.message}</p>`;
       }
     }, 400);
   });
