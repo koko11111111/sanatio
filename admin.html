@@ -320,7 +320,7 @@
 
   <script>
     // ── Config ──────────────────────────────────────────────────────────────
-    const ADMIN_EMAIL = "kamols2642009@gmail.com";
+    const ADMIN_EMAILS = ["kamols2642009@gmail.com", "kokomina946@gmail.com"];
     const SERVER_URL  = "http://localhost:5050";
     const QUEUE_KEY   = "sanatioReviewQueue";
 
@@ -373,7 +373,7 @@
         return false;
       }
 
-      if (me.email !== ADMIN_EMAIL) {
+      if (me.email !== ADMIN_EMAILS[0] && !ADMIN_EMAILS.includes(me.email)) {
         root.innerHTML = `
           <div class="admin-denied">
             <div class="admin-denied-icon">🚫</div>

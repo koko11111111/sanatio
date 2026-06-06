@@ -7,7 +7,7 @@
  */
 
 (function () {
-  const ADMIN_EMAIL = "kamols2642009@gmail.com";
+  const ADMIN_EMAILS = ["kamols2642009@gmail.com", "kokomina946@gmail.com"];
 
   function safeImg(url, name) {
     const v = String(url||"").trim();
@@ -52,7 +52,7 @@
   function buildNav(me) {
     document.getElementById("sanatio-navbar")?.remove();
 
-    const isAdmin = me.email === ADMIN_EMAIL;
+    const isAdmin = ADMIN_EMAILS.includes(me.email);
 
     const nav = document.createElement("nav");
     nav.id = "sanatio-navbar";
